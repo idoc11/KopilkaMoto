@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Копилка на мотоцикл",
+  "short_name": "Копилка",
+  "description": "Трекер накоплений на мотоцикл",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f2ef",
+  "theme_color": "#d6402a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
