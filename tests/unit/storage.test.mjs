@@ -115,3 +115,52 @@ test('при переполнении хранилища освобождает 
   assert.equal(s.getItem(RAW_PREFIX + '2026-01-01'), null, 'самая старая копия удалена');
   assert.equal(s.getItem(RAW_PREFIX + '2026-01-02'), 'old-2');
 });
+
+test('повреждённые настройки и чат не ломают запуск', () => {
+  const s = fakeStorage({ 'kopilkamoto-prefs-v2': '{oops', 'kopilkamoto-chat-v1': '{"not":"array"}' });
+  const store = createStore(s, { now });
+  assert.equal(store.loadPrefs().theme, 'auto');
+  assert.deepEqual(store.loadChat(), []);
+  s.setItem('kopilkamoto-chat-v1', 'oops');
+  assert.deepEqual(store.loadChat(), []);
+});
+
+test('замок: дата включения сохраняется, без замка обнуляется', () => {
+  assert.equal(normalizePrefs({ lock: true, lockSince: 123 }).lockSince, 123);
+  assert.ok(normalizePrefs({ lock: true }).lockSince > 0);
+  assert.deepEqual(
+    [normalizePrefs({ lock: 'yes', lockSince: 5 }).lock, normalizePrefs({ lockSince: 5 }).lockSince],
+    [false, 0],
+  );
+});
+
+test('removeRaw удаляет только копии; недоступное хранилище не роняет приложение', () => {
+  const s = fakeStorage({ [STORAGE_KEY]: '{}', [RAW_PREFIX + 'a']: 'x' });
+  const store = createStore(s, { now });
+  store.removeRaw(STORAGE_KEY);
+  assert.equal(s.getItem(STORAGE_KEY), '{}', 'основные данные удалить нельзя');
+  store.removeRaw(RAW_PREFIX + 'a');
+  assert.equal(s.getItem(RAW_PREFIX + 'a'), null);
+
+  const broken = {
+    get length() {
+      throw new Error('SecurityError');
+    },
+    key: () => null,
+    getItem() {
+      throw new Error('SecurityError');
+    },
+    setItem() {
+      throw new Error('SecurityError');
+    },
+    removeItem() {
+      throw new Error('SecurityError');
+    },
+  };
+  const b = createStore(broken, { now });
+  assert.equal(b.load().isNew, true);
+  assert.deepEqual(b.rawKeys(), []);
+  assert.equal(b.savePrefs({ theme: 'dark' }), false);
+  assert.equal(b.saveChat([]), false);
+  b.removeRaw(RAW_PREFIX + 'x');
+});
