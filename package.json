@@ -1,6 +1,6 @@
 {
   "name": "kopilkamoto",
-  "version": "6.2.1",
+  "version": "6.2.2",
   "private": true,
   "description": "PWA-трекер накоплений на мотоцикл",
   "type": "module",
