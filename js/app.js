@@ -5,6 +5,8 @@ import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.
 
 const APP_VERSION = '6.2.1';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
+/** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
+const HISTORY_PAGE = 100;
 const THEME_COLORS = { light: '#f1eee8', dark: '#141413' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
 
@@ -91,6 +93,7 @@ const ui = {
   knownMarks: null,
   flashId: null,
   chartAnimate: true,
+  historyLimit: HISTORY_PAGE,
 };
 
 function cloneState(s = state) {
@@ -249,7 +252,10 @@ function showPage(page, { focus = true } = {}) {
     ui.chartAnimate = true;
     renderHome();
   }
-  if (page === 'history') renderHistory();
+  if (page === 'history') {
+    ui.historyLimit = HISTORY_PAGE;
+    renderHistory();
+  }
   if (page === 'add') prepareForm();
   if (page === 'settings') renderSettings();
   if (page === 'ai') renderChat();
@@ -474,9 +480,28 @@ function renderHistory() {
     ),
     h('p', { className: 'hint', text: `Итог выбранных операций: ${core.formatSigned(totals.net)}` }),
   );
+  const shown = list.slice(0, ui.historyLimit);
+  const rest = list.length - shown.length;
   $('list').replaceChildren(
     ...(list.length
-      ? list.map(([id, e]) => entryItem(id, e))
+      ? [
+          ...shown.map(([id, e]) => entryItem(id, e)),
+          rest > 0 &&
+            h(
+              'li',
+              { className: 'more' },
+              h('button', {
+                className: 'btn wide',
+                type: 'button',
+                id: 'historyMore',
+                text: `Показать ещё ${Math.min(rest, HISTORY_PAGE)} из ${rest}`,
+                onClick: () => {
+                  ui.historyLimit += HISTORY_PAGE;
+                  renderHistory();
+                },
+              }),
+            ),
+        ].filter(Boolean)
       : [
           h('li', {
             className: 'empty',
@@ -1147,9 +1172,13 @@ function bind() {
   }
   for (const b of document.querySelectorAll('[data-add]'))
     b.addEventListener('click', () => openAdd(b.dataset.add));
-  $('historySearch').addEventListener('input', renderHistory);
-  $('historyKind').addEventListener('change', renderHistory);
-  $('historyPeriod').addEventListener('change', renderHistory);
+  const refilter = () => {
+    ui.historyLimit = HISTORY_PAGE;
+    renderHistory();
+  };
+  $('historySearch').addEventListener('input', refilter);
+  $('historyKind').addEventListener('change', refilter);
+  $('historyPeriod').addEventListener('change', refilter);
   $('csvExport').addEventListener('click', exportCsv);
   $('settingsForm').addEventListener('submit', submitSettings);
   $('apiForm').addEventListener('submit', submitApi);
