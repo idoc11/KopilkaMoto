@@ -161,6 +161,17 @@
           </form>
 
           <div class="dash">
+            <figure class="dream">
+              <img
+                id="dreamBike"
+                src="./images/dream-bike.webp"
+                alt="Мотоцикл мечты"
+                width="800"
+                height="464"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </figure>
             <p class="dash-label">Накоплено</p>
             <p class="total" id="total">0 ₽</p>
             <p class="goal" id="goalText"></p>
@@ -278,7 +289,14 @@
               <label class="field">Дата <input id="date" type="date" required /></label>
               <label class="field" id="hoursWrap"
                 >Часы работы
-                <input type="text" id="hours" inputmode="decimal" autocomplete="off" placeholder="8" />
+                <input
+                  type="text"
+                  id="hours"
+                  autocomplete="off"
+                  placeholder="8 или 7:30"
+                  aria-describedby="hoursHint"
+                />
+                <span class="field-hint" id="hoursHint">Минуты — через двоеточие</span>
               </label>
             </div>
             <label class="field"

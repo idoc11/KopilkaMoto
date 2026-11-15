@@ -9,6 +9,8 @@ test('service worker кеширует все файлы приложения и 
   for (const f of await readdir('js')) assert.ok(shell.includes('js/' + f), `js/${f} нет в SHELL`);
   for (const f of (await readdir('fonts')).filter((x) => x.endsWith('.woff2')))
     assert.ok(shell.includes('fonts/' + f), `fonts/${f} нет в SHELL`);
+  for (const f of await readdir('images'))
+    assert.ok(shell.includes('images/' + f), `images/${f} нет в SHELL`);
   for (const f of await readdir('icons')) assert.ok(shell.includes('icons/' + f), `icons/${f} нет в SHELL`);
   assert.ok(shell.includes('styles.css') && shell.includes('index.html'));
 });

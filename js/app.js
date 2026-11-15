@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.2.3';
+const APP_VERSION = '6.4.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -293,7 +293,7 @@ function entryTitle(e) {
 function entryItem(id, e) {
   const income = core.KINDS[e.kind].income;
   const sum = (income ? '+' : '−') + core.formatRub(e.amount);
-  const sub = core.formatDate(e.date) + (e.hours ? ` · ${String(e.hours).replace('.', ',')} ч` : '');
+  const sub = core.formatDate(e.date) + (e.hours ? ` · ${core.formatHours(e.hours)}` : '');
   const label = `${entryTitle(e)}, ${core.formatDate(e.date)}, ${sum}`;
   return h(
     'li',
@@ -351,6 +351,10 @@ function renderHome() {
     }),
   );
   road.classList.toggle('finished', s.phase === 'done');
+  const bike = $('dreamBike');
+  bike.style.setProperty('--gray', String(1 - s.pct / 100));
+  bike.parentElement.classList.toggle('done', s.phase === 'done');
+  bike.alt = `Мотоцикл мечты: цвет проявляется по мере накопления, сейчас ${Math.floor(s.pct)}%`;
   const pctText = s.pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
   $('pct').textContent = pctText;
   const progress = $('progress');
@@ -713,7 +717,7 @@ function editEntry(id) {
   ui.editingId = id;
   $('amount').value = String(e.amount).replace('.', ',');
   $('date').value = e.date;
-  $('hours').value = e.hours ? String(e.hours).replace('.', ',') : '';
+  $('hours').value = core.hoursInputValue(e.hours);
   $('note').value = e.note;
   $('h-add').textContent = 'Правка записи';
   $('saveEntry').textContent = 'Сохранить изменения';
@@ -745,7 +749,7 @@ async function submitEntry(ev) {
   if (ui.kind === 'delivery') {
     hours = core.parseHours($('hours').value);
     if (!(hours >= 0 && hours <= core.MAX_HOURS_PER_ENTRY)) {
-      return formError('hours', 'Часы работы — от 0 до 24 (например, 7,5).');
+      return formError('hours', 'Часы работы — от 0 до 24, например 7:30 или 7,5.');
     }
   }
   if (prefs.lock && ui.kind === 'spent' && !editing) {

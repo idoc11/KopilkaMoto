@@ -257,6 +257,23 @@ a {
 }
 
 /* Приборная панель */
+.dream {
+  margin: 0 0 4px;
+}
+.dream img {
+  --gray: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 230px;
+  object-fit: contain;
+  /* Цвет проявляется по мере накопления: 0% — серый, 100% — полностью цветной */
+  filter: grayscale(var(--gray)) contrast(calc(1 - var(--gray) * 0.08));
+  transition: filter var(--t-move) ease;
+}
+.dream.done img {
+  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent));
+}
 .dash {
   padding: 10px 0 4px;
 }
@@ -626,6 +643,10 @@ h2.page-title {
 }
 .field input[aria-invalid='true'] {
   border-color: var(--red);
+}
+.field-hint {
+  font-size: 12px;
+  color: var(--muted);
 }
 .field-error {
   color: var(--red);

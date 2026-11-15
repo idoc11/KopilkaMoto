@@ -120,13 +120,42 @@ export function parseAmount(input) {
   return Number(s);
 }
 
+/**
+ * Разбирает часы работы: «7:30», «7 ч 30 мин», «45 мин», «7,5», «7.5», «8». Пусто — 0, ошибка — NaN.
+ * Точка и запятая — всегда дробь часа (7.30 = 7,3 ч); минуты пишутся через двоеточие или «мин».
+ */
 export function parseHours(input) {
   const s = String(input ?? '')
     .trim()
-    .replace(',', '.');
+    .toLowerCase();
   if (s === '') return 0;
-  if (!/^\d+(\.\d+)?$/.test(s)) return NaN;
-  return Number(s);
+  let m = /^(\d{1,2}):([0-5]\d)$/.exec(s);
+  if (m) return Number(m[1]) + Number(m[2]) / 60;
+  m = /^(?:(\d{1,2})\s*ч(?:ас\S*)?)?\s*(?:(\d{1,2})\s*м(?:ин\S*)?)?$/.exec(s);
+  if (m && (m[1] || m[2])) {
+    const min = Number(m[2] || 0);
+    return min < 60 ? Number(m[1] || 0) + min / 60 : NaN;
+  }
+  const d = s.replace(',', '.');
+  return /^\d+(\.\d+)?$/.test(d) ? Number(d) : NaN;
+}
+
+const splitHours = (h) => {
+  const total = Math.round(h * 60);
+  return [Math.floor(total / 60), total % 60];
+};
+
+/** «7 ч 30 мин», «8 ч», «45 мин». */
+export function formatHours(h) {
+  const [hh, mm] = splitHours(h);
+  return [hh && `${hh} ч`, mm && `${mm} мин`].filter(Boolean).join(' ') || '0 ч';
+}
+
+/** Значение для поля ввода: «7:30» или «8». */
+export function hoursInputValue(h) {
+  if (!h) return '';
+  const [hh, mm] = splitHours(h);
+  return mm ? `${hh}:${String(mm).padStart(2, '0')}` : String(hh);
 }
 
 // ---------- Нормализация и миграция данных ----------
