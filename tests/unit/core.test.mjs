@@ -323,3 +323,27 @@ test('замок: задержка покупки и подсчёт расход
   assert.deepEqual(w, { count: 1, sum: 200 });
   assert.deepEqual(core.withdrawals({ a: e(T, 1, 'spent') }, 0), { count: 0, sum: 0 });
 });
+
+test('прогноз: долгий простой — отдельное сообщение, а не «расходы съели доходы»', () => {
+  const idle = st({ a: e('2026-09-01', 5000) }, { goal: 100000 });
+  const f = core.forecast(idle, T);
+  assert.equal(f.status, 'stale');
+  assert.match(core.forecastText(f), /записей не было/);
+  assert.doesNotMatch(core.forecastText(f), /расходы/);
+  // настоящий перевес расходов по-прежнему распознаётся
+  const losing = core.forecast(st({ a: e(T, 100), b: e(T, 500, 'spent') }), T);
+  assert.equal(losing.status, 'no-progress');
+  assert.match(core.forecastText(losing), /расходы/);
+  // при простое замок не обещает сдвиг покупки
+  assert.equal(core.delayDays(idle, 1000, T), null);
+});
+
+test('CSV: копейки через запятую — русский Excel читает их как числа', () => {
+  const csv = core.buildCsv({
+    a: e(T, 1500.5, 'delivery', { hours: 7.5 }),
+    b: e(T, 99.25, 'spent', { ts: 2 }),
+  });
+  const lines = csv.slice(1).split('\r\n');
+  assert.ok(lines.includes('"2026-11-15";"Доставка";"1500,5";"7,5";""'), lines.join('\n'));
+  assert.ok(lines.includes('"2026-11-15";"Расход";"-99,25";"0";""'), lines.join('\n'));
+});

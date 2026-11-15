@@ -64,7 +64,7 @@ npx wrangler deploy
 npm ci
 npm start            # http://localhost:8080 — ES-модули не работают через file://
 npm run lint         # ESLint + Prettier
-npm test             # unit-тесты (node:test) и E2E (Playwright + axe)
+npm test             # unit-тесты, порог покрытия 80% и E2E (Playwright + axe)
 npm run build        # сборка _site/ как на GitHub Pages
 npm run icons        # перегенерировать PNG-иконки из описания в scripts/icons.mjs
 ```

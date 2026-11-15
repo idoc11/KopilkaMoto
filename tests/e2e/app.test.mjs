@@ -299,3 +299,24 @@ test('кнопка «Назад» Android переключает разделы'
   assert.equal(await page.getAttribute('nav [data-nav=history]', 'aria-current'), 'page');
   await ctx.close();
 });
+
+test('история с тысячами записей: рисуется порциями по 100, итоги — по всем, поиск сбрасывает порцию', async () => {
+  const entries = {};
+  for (let i = 0; i < 1500; i++)
+    entries['k' + i] = entry(shift(-(i % 300)), 10, 'delivery', { note: 'Смена ' + i, ts: i + 1 });
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, { storage: configured(entries), hash: '#history' });
+  assert.equal(await page.locator('#list .entry').count(), 100);
+  assert.equal(await page.textContent('#count'), '1500 из 1500');
+  assert.match(await page.textContent('#historySummary'), /15\s000/);
+  assert.match(await page.textContent('#historyMore'), /Показать ещё 100 из 1400/);
+  await page.click('#historyMore');
+  assert.equal(await page.locator('#list .entry').count(), 200);
+  await page.fill('#historySearch', 'Смена 14');
+  assert.equal(await page.locator('#list .entry').count(), 100);
+  assert.equal(await page.textContent('#count'), '111 из 1500');
+  await page.fill('#historySearch', 'Смена 1499');
+  assert.equal(await page.locator('#historyMore').count(), 0);
+  assert.doesNotMatch(await page.textContent('#list'), /false/);
+  await ctx.close();
+});

@@ -573,6 +573,10 @@ h2.page-title {
   background: transparent;
   color: var(--muted);
 }
+.entries .more {
+  list-style: none;
+  padding-top: 12px;
+}
 .empty {
   color: var(--muted);
   padding: 6px 0;
