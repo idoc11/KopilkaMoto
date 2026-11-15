@@ -2,6 +2,7 @@
 
 import {
   CHAT_KEY,
+  normalizePresets,
   MAX_RAW_COPIES,
   PREFS_KEY,
   RAW_PREFIX,
@@ -31,6 +32,7 @@ export function normalizePrefs(p) {
     snoozeUntil: num(src.snoozeUntil),
     lock: src.lock === true,
     lockSince: src.lock === true ? num(src.lockSince) || Date.now() : 0,
+    presets: normalizePresets(src.presets),
   };
 }
 

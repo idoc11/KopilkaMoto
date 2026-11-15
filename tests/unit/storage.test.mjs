@@ -164,3 +164,10 @@ test('removeRaw удаляет только копии; недоступное �
   assert.equal(b.saveChat([]), false);
   b.removeRaw(RAW_PREFIX + 'x');
 });
+
+test('частые расходы в настройках: старые настройки получают стандартные, свои сохраняются', () => {
+  assert.equal(normalizePrefs({ theme: 'dark' }).presets.length, 2);
+  assert.deepEqual(normalizePrefs({ presets: [{ note: 'Кофе', amount: 200 }] }).presets, [
+    { note: 'Кофе', amount: 200 },
+  ]);
+});

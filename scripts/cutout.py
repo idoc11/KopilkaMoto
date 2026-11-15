@@ -1,7 +1,11 @@
-"""Вырезает мотоцикл с белого фона: прозрачный фон, мягкая тень, без белой каймы.
+"""Вырезает мотоцикл со студийного белого фона: прозрачный фон без тени и без белой каймы.
+
 Запуск: python3 scripts/cutout.py <исходник> images/dream-bike.webp
+Нужны Pillow и numpy. Рассчитано на фото сбоку на белом фоне с тенью на полу.
 """
+
 import sys
+
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -11,14 +15,12 @@ H, W, _ = rgb.shape
 mn, mx = rgb.min(2), rgb.max(2)
 lowsat = (mx - mn) < 18
 
-# 1. Кандидаты в фон: почти белые серые пиксели. Фон — области, касающиеся края, или крупнее 120 px.
+# 1. Фон: почти белые серые пиксели, связанные с краем, и крупные замкнутые белые области (между спицами).
 cand = lowsat & (mn >= 236)
-# Внешний фон — одна заливка от рамки (добавляем белую рамку в 1 px, чтобы заливка обошла весь край).
 pad = np.pad(cand, 1, constant_values=True)
 lab = Image.fromarray((pad * 255).astype(np.uint8))
 ImageDraw.floodfill(lab, (0, 0), 128)
 bg = (np.asarray(lab) == 128)[1:-1, 1:-1]
-# Замкнутые белые области (между спицами и т.п.): BFS только по оставшимся кандидатам.
 rest = cand & ~bg
 seen = np.zeros_like(rest)
 for y0, x0 in np.argwhere(rest):
@@ -39,33 +41,55 @@ for y0, x0 in np.argwhere(rest):
 
 alpha = np.where(bg, 0.0, 1.0)
 
-# 2. Кайма: светлые пиксели у границы фона — частично прозрачные, белый из цвета убираем.
+# 2. Кайма: светлые пиксели у границы фона — частично прозрачные.
 ring = np.zeros_like(bg)
 for dy in range(-2, 3):
     for dx in range(-2, 3):
         ring |= np.roll(np.roll(bg, dy, 0), dx, 1)
 ring &= ~bg & lowsat & (mn >= 150)
-a_edge = np.clip((255 - mn) / (255 - 150), 0.05, 1)
-alpha = np.where(ring, a_edge, alpha)
+alpha = np.where(ring, np.clip((255 - mn) / (255 - 150), 0.05, 1), alpha)
 
-# 3. Тень под колёсами: серое ниже линии колёс — полупрозрачный чёрный.
-ys = np.argwhere(~bg)[:, 0]
-bottom = ys.max()
-shadow = np.zeros_like(bg)
-shadow[bottom - 26 :, :] = True
-shadow &= ~bg & lowsat & (mn >= 110)
-alpha = np.where(shadow, np.clip((255 - mn) / 255 * 1.3, 0, 0.55), alpha)
+# 3. Низ: ниже днища между колёсами — только шины и пол. Пол (светлое) убираем, шины оставляем,
+#    студийную полосу тени под шинами убираем целиком — вместо неё рисуем свою.
+obj = (~bg) & ((mn < 200) | ~lowsat)
+mid = slice(int(W * 0.38), int(W * 0.68))
+mid_obj = obj[:, mid].sum(1)
+zone_start = next(y for y in range(int(H * 0.6), H) if mid_obj[y] == 0)
+shadow_start = next((y for y in range(zone_start, H) if mid_obj[y] > 0), H)
+floor = np.zeros_like(bg)
+floor[zone_start:shadow_start] = True
+tyre_alpha = np.clip((175 - mn) / 55, 0, 1)
+# Шина сужается книзу: в каждой строке оставляем только участки, продолжающие шину из строки выше.
+# Хвосты студийной тени лежат в стороне от шины и отбрасываются.
+keep = np.zeros_like(bg)
+keep[zone_start - 1] = tyre_alpha[zone_start - 1] > 0.3
+for y in range(zone_start, shadow_start):
+    row = tyre_alpha[y] > 0.05
+    xs = np.flatnonzero(np.diff(np.concatenate(([0], row.astype(np.int8), [0]))))
+    for x0, x1 in zip(xs[::2], xs[1::2]):
+        above = np.flatnonzero(keep[y - 1, max(0, x0 - 1) : x1 + 1])
+        if len(above):
+            # Шина книзу только сужается: не шире участка строкой выше (+1 px) — тень сбоку отрезается.
+            lo = max(x0, max(0, x0 - 1) + above[0] - 1)
+            hi = min(x1, max(0, x0 - 1) + above[-1] + 2)
+            keep[y, lo:hi] = True
+alpha = np.where(floor & lowsat, np.where(keep, np.minimum(alpha, tyre_alpha), 0), alpha)
+alpha[shadow_start - 1 :] = 0
 
+# Края шин: убираем белую подмесь в полупрозрачных пикселях.
 out = rgb.copy()
+soft = (ring | floor) & (alpha > 0) & (alpha < 1)
 a3 = np.maximum(alpha, 1e-3)[..., None]
-unmixed = np.clip((rgb - 255 * (1 - a3)) / a3, 0, 255)
-out = np.where((ring | shadow)[..., None], unmixed, out)
-out = np.where(shadow[..., None], 0, out)
+out = np.where(soft[..., None], np.clip((rgb - 255 * (1 - a3)) / a3, 0, 255), out)
 
-rgba = np.dstack([out, alpha * 255]).astype(np.uint8)
+# 4. Без тени: только сам мотоцикл.
+a_out = alpha
+rgb_out = out
+
+rgba = np.dstack([rgb_out, a_out * 255]).clip(0, 255).astype(np.uint8)
 img = Image.fromarray(rgba, 'RGBA')
-box = Image.fromarray((alpha > 0.03).astype(np.uint8) * 255).getbbox()
+box = Image.fromarray((a_out > 0.03).astype(np.uint8) * 255).getbbox()
 img = img.crop((max(0, box[0] - 4), max(0, box[1] - 4), min(W, box[2] + 4), min(H, box[3] + 4)))
 img = img.resize((800, round(img.height * 800 / img.width)), Image.LANCZOS)
 img.save(dst, 'WEBP', quality=84, method=6)
-print('saved', dst, img.size)
+print('saved', dst, img.size, 'zone', zone_start, shadow_start)
