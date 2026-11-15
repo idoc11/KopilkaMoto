@@ -1,0 +1,30 @@
+# Конфигурация Cloudflare Worker для AI-помощника KopilkaMoto.
+# Деплой: cd worker && npx wrangler deploy
+# Секрет:  npx wrangler secret put OPENAI_API_KEY
+name = "kopilkamoto-ai"
+main = "ai-worker.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Точный адрес сайта без пути и слеша в конце. Не используй "*".
+ALLOWED_ORIGIN = "https://idoc11.github.io"
+OPENAI_MODEL = "gpt-5-mini"
+# Запасной лимит, если биндинг RATE_LIMITER недоступен (запросов в минуту с одного IP).
+PER_MINUTE_LIMIT = "6"
+# Дневной лимит на весь Worker (работает, только если подключён KV USAGE ниже).
+DAILY_LIMIT = "300"
+
+# Ограничение частоты по IP (Wrangler 4.36+). namespace_id — любое число, уникальное в аккаунте.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1701"
+
+  [ratelimits.simple]
+  limit = 6
+  period = 60
+
+# Дневной лимит: создай KV командой `npx wrangler kv namespace create USAGE`
+# и раскомментируй блок, подставив выданный id.
+# [[kv_namespaces]]
+# binding = "USAGE"
+# id = "<id из вывода wrangler>"

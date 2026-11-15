@@ -1,78 +1,426 @@
 <!doctype html>
 <html lang="ru">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#171a21"><meta name="description" content="KopilkaMoto — трекер накоплений на мотоцикл">
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg">
-<title>KopilkaMoto</title>
-<style>
-:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light;--bg:#f3f4f6;--panel:#fff;--panel2:#f7f7f8;--fg:#17191e;--muted:#737985;--line:#e5e7eb;--accent:#e34d37;--green:#16845b;--red:#c44c42}
-:root[data-theme=dark]{color-scheme:dark;--bg:#101216;--panel:#191d24;--panel2:#20252e;--fg:#f3f4f6;--muted:#a0a7b4;--line:#2b313b;--accent:#ff644d;--green:#56c997;--red:#ff8275}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);padding:env(safe-area-inset-top) 14px calc(90px + env(safe-area-inset-bottom));transition:.2s}.app{max-width:720px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;padding:18px 2px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:14px;background:var(--accent);display:grid;place-items:center;color:white;font-size:22px;font-weight:800}.brand h1{font-size:19px;margin:0}.brand small{color:var(--muted)}button,input,select,textarea{font:inherit}button{cursor:pointer}.icon{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:12px;padding:10px}.page{display:none}.page.active{display:block}.hero{background:linear-gradient(135deg,#292f3c,#151922);color:white;border-radius:23px;padding:23px}.hero small{color:#c4c9d3}.total{font-size:clamp(34px,8vw,48px);font-weight:850;letter-spacing:-1px;margin:9px 0}.goal{color:#c4c9d3;font-size:13px}.progress{height:9px;background:#ffffff28;border-radius:20px;margin:20px 0 9px;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,#ff987b,#ed503a);border-radius:20px}.meta{display:flex;justify-content:space-between;font-size:12px;color:#ddd}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:15px}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{display:block;margin-top:7px;font-size:clamp(13px,3.5vw,18px)}.status{padding:12px;border-radius:12px;background:#16845b18;color:var(--green);font-size:13px;font-weight:650;margin-top:12px}.status.behind{background:#c47a1818;color:#b97820}.status.neutral{background:var(--panel2);color:var(--muted)}.head{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 10px}.head h2{font-size:15px;margin:0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);text-align:left;font-weight:700}.action.primary,.primary{background:var(--accent);color:white;border-color:var(--accent)}.action small{display:block;color:var(--muted);font-weight:400;margin-top:4px}.action.primary small{color:#ffe4df}.chart{height:155px;display:flex;align-items:end;gap:8px}.bar{height:100%;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:6px}.bar i{width:min(100%,34px);background:var(--accent);border-radius:7px 7px 3px 3px;min-height:3px}.bar span{font-size:10px;color:var(--muted)}.field{display:flex;flex-direction:column;gap:6px;margin:11px 0;font-size:12px;color:var(--muted)}.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--fg);font-size:15px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seg{display:flex;gap:5px;padding:4px;background:var(--panel2);border-radius:12px}.seg button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:9px;padding:9px 4px;font-size:12px}.seg button.on{background:var(--panel);color:var(--fg)}.primary{width:100%;border:0;border-radius:12px;padding:14px;font-weight:750}.entry-actions{display:flex;gap:5px}.entry-actions button{padding:7px 9px}.entry{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.entry:last-child{border:0}.entry .desc{flex:1;min-width:0}.entry b{font-size:13px}.entry small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.sum{font-weight:750;font-size:13px;white-space:nowrap}.pos{color:var(--green)}.neg{color:var(--red)}.empty{text-align:center;color:var(--muted);padding:24px;font-size:13px}.nav{position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center}.navin{width:100%;max-width:720px;display:grid;grid-template-columns:repeat(5,1fr)}.nav button{border:0;background:none;color:var(--muted);font-size:10px;padding:5px}.nav button b{display:block;font-size:19px}.nav button.active{color:var(--accent);font-weight:800}.chat{display:flex;flex-direction:column;gap:9px;max-height:42vh;overflow:auto;margin-bottom:10px}.bubble{padding:11px 13px;border-radius:14px;max-width:90%;font-size:13px;white-space:pre-wrap}.bubble.ai{background:var(--panel2);align-self:flex-start}.bubble.user{background:var(--accent);color:white;align-self:flex-end}.chatrow{display:flex;gap:7px}.chatrow textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--panel2);color:var(--fg)}.hint{font-size:11px;color:var(--muted);line-height:1.5}.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.badge-item{padding:11px 7px;border:1px solid var(--line);border-radius:13px;text-align:center;background:var(--panel2);opacity:.48;filter:grayscale(1)}.badge-item.unlocked{opacity:1;filter:none;border-color:color-mix(in srgb,var(--green) 45%,var(--line))}.badge-item .medal{font-size:24px;display:block;margin-bottom:5px}.badge-item b{display:block;font-size:11px}.badge-item small{display:block;font-size:10px;color:var(--muted);margin-top:3px}@media(max-width:380px){.badges{grid-template-columns:repeat(2,1fr)}}.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 15px;border-radius:30px;font-size:12px}
-.field input:focus,.field select:focus,.field textarea:focus,.chatrow textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:1px}.entry .desc b{overflow-wrap:anywhere}.entry-actions{flex-shrink:0}@media(max-width:380px){.stat{padding:10px}.stat b{font-size:12px}.hero{padding:18px}}
-</style></head>
-<body><div class="app">
-<header class="top"><div class="brand"><div class="logo">₽</div><div><h1>KopilkaMoto</h1><small>Твоя мечта ближе каждый день</small></div></div><button class="icon" id="themeBtn">◐</button></header>
-<section class="page active" id="home">
-<div class="hero"><small>МОИ НАКОПЛЕНИЯ</small><div class="total" id="total">0 ₽</div><div class="goal" id="goalText">из 600 000 ₽</div><div class="progress"><span id="fill" style="width:0%"></span></div><div class="meta"><span id="pct">0%</span><span id="left">Осталось 600 000 ₽</span></div></div>
-<div class="stats"><div class="stat"><small>Нужно в день</small><b id="perDay">—</b></div><div class="stat"><small>Доход/час</small><b id="perHour">—</b></div><div class="stat"><small>До цели</small><b id="daysLeft">—</b></div></div><div class="status neutral" id="status">Добавь первую запись.</div>
-<div class="head"><h2>Быстрое действие</h2></div><div class="actions"><button class="action primary" data-go="add">＋ Добавить доход<small>Доставка или подработка</small></button><button class="action" data-go="add" data-kind="spent">− Записать расход<small>Учесть трату из копилки</small></button></div>
-<div class="head"><h2>Чистые накопления за последние 7 дней</h2><span id="weekTotal" class="hint"></span></div><div class="card"><div class="chart" id="chart"></div><p class="hint">Доходы минус расходы за каждый день. Наведи или нажми на столбец, чтобы увидеть сумму.</p></div><div class="head"><h2>Этот месяц</h2></div><div class="stats"><div class="stat"><small>Доходы</small><b class="pos" id="monthIncome">0 ₽</b></div><div class="stat"><small>Расходы</small><b class="neg" id="monthSpent">0 ₽</b></div><div class="stat"><small>Чистый итог</small><b id="monthNet">0 ₽</b></div></div><div class="head"><h2>Мои достижения</h2><span class="hint" id="streakLabel"></span></div><div class="card"><div class="badges" id="achievements"></div><p class="hint" id="nextAchievement" style="margin-bottom:0"></p></div>
-<div class="head"><h2>Последние операции</h2><button class="icon" data-go="history">Вся история</button></div><div class="card" id="recent"></div></section>
-<section class="page" id="add"><div class="head"><h2 id="entryFormTitle">Новая операция</h2></div><div class="card"><div class="seg" id="kinds"><button class="on" data-kind="delivery">Доставка</button><button data-kind="other">Доход</button><button data-kind="spent">Расход</button></div>
-<label class="field">Сумма, ₽<input id="amount" type="number" min="1" placeholder="Например, 5000"></label><div class="grid"><label class="field">Дата<input id="date" type="date"></label><label class="field" id="hoursWrap">Часы работы<input id="hours" type="number" min="0" step=".5" placeholder="8"></label></div><label class="field">Комментарий<input id="note" maxlength="100" placeholder="Смена, бонус, ремонт..."></label><div class="grid"><button class="icon" data-amount="1500">+1 500 ₽</button><button class="icon" data-amount="3000">+3 000 ₽</button><button class="icon" data-amount="5000">+5 000 ₽</button><button class="icon" data-amount="7000">+7 000 ₽</button></div><div class="grid" style="margin-top:12px"><button class="primary" id="saveEntry">Сохранить операцию</button><button class="icon" id="cancelEntry" type="button" hidden>Отмена</button></div></div></section>
-<section class="page" id="history"><div class="head"><h2>История операций</h2><span id="count" class="hint"></span></div><div class="card"><label class="field">Поиск по комментарию<input id="historySearch" type="search" placeholder="Например, смена или ремонт"></label><div class="grid"><label class="field">Тип операции<select id="historyKind"><option value="all">Все операции</option><option value="delivery">Доставка</option><option value="other">Другой доход</option><option value="spent">Расход</option></select></label><label class="field">Период<select id="historyPeriod"><option value="all">За всё время</option><option value="month">Этот месяц</option><option value="30">Последние 30 дней</option></select></label></div><button class="icon" id="csvExport" style="width:100%">Скачать историю в CSV</button></div><div class="card" id="historySummary" style="margin-top:10px"></div><div class="card" id="list" style="margin-top:10px"></div></section>
-<section class="page" id="ai"><div class="head"><h2>ChatGPT-помощник</h2><span class="hint">AI</span></div><div class="card"><div class="chat" id="chat"><div class="bubble ai">Привет! Я помогу проанализировать накопления и составить план. Для подключения укажи URL защищённого API-прокси в настройках.</div></div><div class="chatrow"><textarea id="question" rows="2" placeholder="Как быстрее накопить?"></textarea><button class="primary" id="send" style="width:52px">➤</button></div><p class="hint">API-ключ OpenAI хранится только на сервере. При отправке вопроса помощнику ему передаются цель, баланс и до 80 последних операций. Не добавляй в комментарии пароли и другие секретные данные.</p></div></section>
-<section class="page" id="settings"><div class="head"><h2>Настройки</h2></div><div class="card"><div class="grid"><label class="field">Цель, ₽<input id="goalInput" type="number" min="1" max="1000000000"></label><label class="field">Уже отложено, ₽<input id="startInput" type="number" min="0" max="1000000000"></label></div><div class="grid"><label class="field">Начало плана<input id="startDateInput" type="date"></label><label class="field">Дата достижения цели<input id="deadlineInput" type="date"></label></div><button class="primary" id="saveSettings">Сохранить цель и сроки</button><p class="hint">Сроки можно менять в любой момент. Прогресс будет пересчитан автоматически.</p></div><div class="head"><h2>Тема</h2></div><div class="card"><label class="field">Оформление<select id="theme"><option value="auto">Автоматически</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label></div><div class="head"><h2>ChatGPT API</h2></div><div class="card"><label class="field">URL защищённого прокси<input id="apiUrl" type="url" placeholder="https://your-worker.workers.dev"></label><button class="primary" id="saveApi">Сохранить адрес</button><p class="hint">Не вставляй сюда секретный ключ OpenAI. Нужен только URL прокси.</p></div><div class="head"><h2>Резервная копия</h2></div><div class="card"><div class="grid"><button class="icon" id="export">Скачать JSON</button><button class="icon" id="import">Восстановить JSON</button><input id="file" type="file" accept=".json,application/json" hidden></div><button class="icon" id="install" hidden style="width:100%;margin-top:10px">Установить приложение</button><p class="hint">Данные хранятся только в этом браузере. Скачивай копию перед очисткой данных или сменой телефона.</p></div></section>
-</div>
-<nav class="nav"><div class="navin"><button class="active" data-page="home"><b>⌂</b>Главная</button><button data-page="add"><b>＋</b>Добавить</button><button data-page="history"><b>▤</b>История</button><button data-page="ai"><b>✦</b>AI</button><button data-page="settings"><b>⚙</b>Настройки</button></div></nav><div id="toast" class="toast" hidden></div>
-<script>
-(()=>{'use strict';
-const KEY='moto-tracker-v1',PREF='kopilkamoto-prefs-v2',BASE=600000,DEFAULT_START='2026-12-01',DEFAULT_DEADLINE='2027-03-31';
-const $=id=>document.getElementById(id),iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),today=()=>iso(new Date()),dateObj=s=>{let p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])},days=(a,b)=>Math.round((dateObj(b)-dateObj(a))/86400000),rub=n=>Math.round(n||0).toLocaleString('ru-RU')+' ₽';
-let entries={},settings={goal:BASE,start:0,startDate:DEFAULT_START,deadline:DEFAULT_DEADLINE},prefs={theme:'auto',apiUrl:''},kind='delivery',messages=[],installPrompt=null,editingId=null;
-function cleanEntries(source){let clean=Object.create(null);if(!source||typeof source!=='object'||Array.isArray(source))return clean;for(let [id,e] of Object.entries(source)){if(typeof id!=='string'||!id||id.length>120||!e||typeof e!=='object'||Array.isArray(e))continue;let amount=Number(e.amount),hours=Number(e.hours)||0;if(!validDate(e.date)||e.date>today()||!Number.isFinite(amount)||amount<1||amount>1000000000||!['delivery','other','spent'].includes(e.kind)||!Number.isFinite(hours)||hours<0||hours>744)continue;clean[id]={date:e.date,amount:Math.round(amount),hours:e.kind==='delivery'?hours:0,kind:e.kind,note:typeof e.note==='string'?e.note.slice(0,100):'',ts:Number.isFinite(Number(e.ts))&&Number(e.ts)>0?Number(e.ts):Date.now()}}return clean}
-function cleanSettings(source){let goal=Number(source?.goal),start=Number(source?.start),startDate=validDate(source?.startDate)?source.startDate:DEFAULT_START,deadline=validDate(source?.deadline)?source.deadline:DEFAULT_DEADLINE;if(deadline<=startDate){startDate=DEFAULT_START;deadline=DEFAULT_DEADLINE}return{goal:Number.isFinite(goal)&&goal>=1&&goal<=1000000000?Math.round(goal):BASE,start:Number.isFinite(start)&&start>=0&&start<=1000000000?Math.round(start):0,startDate,deadline}}
-function load(){try{let o=JSON.parse(localStorage.getItem(KEY)||'{}');entries=cleanEntries(o.entries);settings=cleanSettings(o.settings)}catch(e){entries=Object.create(null);settings=cleanSettings(null)}try{let p=JSON.parse(localStorage.getItem(PREF)||'{}');if(p&&typeof p==='object'){prefs.theme=['auto','light','dark'].includes(p.theme)?p.theme:'auto';try{let u=new URL(String(p.apiUrl||''));prefs.apiUrl=u.protocol==='https:'?u.href:''}catch(e){prefs.apiUrl=''}}}catch(e){prefs={theme:'auto',apiUrl:''}}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({entries,settings}));return true}catch(e){toast('Не удалось сохранить данные. Освободи память браузера и скачай копию.');return false}}function savePrefs(){try{localStorage.setItem(PREF,JSON.stringify(prefs))}catch(e){toast('Не удалось сохранить настройки')}}
-function validDate(s){if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;let d=dateObj(s);return !Number.isNaN(d.getTime())&&iso(d)===s}
-function signed(e){return e.kind==='spent'?-Math.abs(+e.amount):Math.abs(+e.amount)}function total(){return settings.start+Object.values(entries).reduce((a,e)=>a+signed(e),0)}
-function planAt(s){let span=Math.max(1,days(settings.startDate,settings.deadline)),elapsed=Math.max(0,Math.min(span,days(settings.startDate,s)));return settings.start+(settings.goal-settings.start)*(elapsed/span)}
-function toast(s){let t=$('toast');t.textContent=s;t.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.hidden=true,2100)}
-function theme(){let t=prefs.theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):prefs.theme;document.documentElement.dataset.theme=t;$('theme').value=prefs.theme;$('themeBtn').textContent=t==='dark'?'☀':'☾'}
-function nav(p){if(p!=='add'&&editingId){editingId=null;$('amount').value='';$('hours').value='';$('note').value='';$('date').value=today();$('entryFormTitle').textContent='Новая операция';$('saveEntry').textContent='Сохранить операцию';$('cancelEntry').hidden=true}document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===p));if(p==='history')history();if(p==='home')render()}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function row(id,e){let spend=e.kind==='spent',title=e.note||(e.kind==='delivery'?'Доставка':spend?'Расход':'Другой доход');return '<div class="entry"><div class="desc"><b>'+esc(title)+'</b><small>'+dateObj(e.date).toLocaleDateString('ru-RU')+(e.hours?' · '+e.hours+' ч':'')+'</small></div><span class="sum '+(spend?'neg':'pos')+'">'+(spend?'−':'+')+rub(e.amount)+'</span><div class="entry-actions"><button class="icon edit" data-id="'+esc(id)+'" aria-label="Изменить операцию">✎</button><button class="icon del" data-id="'+esc(id)+'" aria-label="Удалить операцию">×</button></div></div>'}
-function history(){let a=Object.entries(entries).sort((x,y)=>(y[1].date||'').localeCompare(x[1].date||'')||(Number(y[1].ts)||0)-(Number(x[1].ts)||0));let q=($('historySearch')?.value||'').trim().toLowerCase(),k=$('historyKind')?.value||'all',period=$('historyPeriod')?.value||'all',now=new Date(),month=iso(new Date(now.getFullYear(),now.getMonth(),1)),cut=iso(new Date(now.getFullYear(),now.getMonth(),now.getDate()-29));a=a.filter(([id,e])=>(k==='all'||e.kind===k)&&(!q||((e.note||'')+' '+(e.kind==='delivery'?'доставка':e.kind==='spent'?'расход':'доход')).toLowerCase().includes(q))&&(period==='all'||(period==='month'?e.date>=month:e.date>=cut)));let inc=a.reduce((n,[,e])=>n+(e.kind==='spent'?0:+e.amount),0),out=a.reduce((n,[,e])=>n+(e.kind==='spent'?+e.amount:0),0);$('count').textContent=a.length+' из '+Object.keys(entries).length;$('historySummary').innerHTML='<div class="grid"><div><small class="hint">Доходы</small><b class="pos">'+rub(inc)+'</b></div><div><small class="hint">Расходы</small><b class="neg">'+rub(out)+'</b></div></div><p class="hint" style="margin-bottom:0">Баланс выбранных операций: <b>'+(inc>=out?'+':'−')+rub(Math.abs(inc-out))+'</b></p>';$('list').innerHTML=a.length?a.map(x=>row(x[0],x[1])).join(''):'<div class="empty">Ничего не найдено. Измени фильтры или добавь операцию.</div>'}
-function editEntry(id){let e=entries[id];if(!e)return;editingId=id;setKind(e.kind);$('amount').value=e.amount;$('date').value=e.date;$('hours').value=e.hours||'';$('note').value=e.note||'';$('entryFormTitle').textContent='Изменить операцию';$('saveEntry').textContent='Сохранить изменения';$('cancelEntry').hidden=false;nav('add')}
-function renderAchievements(){
-let incomeDays=[...new Set(Object.values(entries).filter(e=>e.kind!=="spent"&&+e.amount>0).map(e=>e.date))].sort();
-let streak=0,check=dateObj(today());
-if(!incomeDays.includes(iso(check))){check.setDate(check.getDate()-1)}
-while(incomeDays.includes(iso(check))){streak++;check.setDate(check.getDate()-1)}
-let pct=Math.max(0,total()/settings.goal*100),count=Object.keys(entries).length,active=incomeDays.length;
-let items=[
-['🌱','Первый шаг','Первая операция',count>=1],['🪙','10% цели','Накоплено 10%',pct>=10],['🏁','Четверть пути','Накоплено 25%',pct>=25],['🏍️','Половина пути','Накоплено 50%',pct>=50],['🔥','Почти у цели','Накоплено 75%',pct>=75],['🏆','Мечта рядом','Цель достигнута',pct>=100],['📅','7 активных дней','Доходы в 7 разных дней',active>=7],['💪','Десять записей','10 операций',count>=10],['⚡','Стабильный темп','3 дня подряд с доходом',streak>=3]
-];
-$('achievements').innerHTML=items.map(x=>'<div class="badge-item '+(x[3]?'unlocked':'')+'" title="'+esc(x[2])+'"><span class="medal">'+x[0]+'</span><b>'+x[1]+'</b><small>'+(x[3]?'Получено':x[2])+'</small></div>').join('');
-$('streakLabel').textContent='Серия: '+streak+' дн.';
-let next=items.find(x=>!x[3]);$('nextAchievement').textContent=next?'Следующее достижение: '+next[1]+' — '+next[2]+'.':'Все достижения открыты — отличная работа!';
-}
-function render(){let t=today(),all=total(),left=Math.max(0,settings.goal-all),pct=Math.max(0,Math.min(100,all/settings.goal*100));$('total').textContent=rub(all);$('goalText').textContent='из '+rub(settings.goal);$('fill').style.width=pct+'%';$('pct').textContent=pct.toFixed(1)+'%';$('left').textContent='Осталось '+rub(left);
-let from=t<settings.startDate?settings.startDate:t,remaining=Math.max(0,days(from,settings.deadline)+1);$('perDay').textContent=t<=settings.deadline&&left&&remaining?rub(left/remaining):'—';
-let ds=Object.values(entries).filter(e=>e.kind==='delivery'&&+e.hours>0),hrs=ds.reduce((a,e)=>a+(+e.hours),0),income=ds.reduce((a,e)=>a+(+e.amount),0);$('perHour').textContent=hrs?rub(income/hrs):'—';$('daysLeft').textContent=left?(t>settings.deadline?'Срок прошёл':remaining+' дн.'):'Цель!';
-let diff=all-planAt(t),st=$('status');if(all>=settings.goal){st.className='status';st.textContent='🎉 Цель достигнута!'}else if(t<settings.startDate){st.className='status neutral';st.textContent='План накоплений стартует '+dateObj(settings.startDate).toLocaleDateString('ru-RU')+'.'}else if(t>settings.deadline){st.className='status behind';st.textContent='Срок плана прошёл. Осталось '+rub(left)}else if(diff>=0){st.className='status';st.textContent='Опережаешь план на '+rub(diff)}else{st.className='status behind';st.textContent='Отстаёшь от плана на '+rub(-diff)}
-let now=dateObj(t),week=[],max=1,sum=0;for(let i=6;i>=0;i--){let d=new Date(now);d.setDate(now.getDate()-i);let s=iso(d),v=Object.values(entries).filter(e=>e.date===s).reduce((a,e)=>a+signed(e),0);week.push([s,v,d.toLocaleDateString('ru-RU',{weekday:'short'})]);max=Math.max(max,Math.abs(v));sum+=v}$('chart').innerHTML=week.map(w=>'<div class="bar" title="'+esc(dateObj(w[0]).toLocaleDateString('ru-RU')+': '+(w[1]<0?'−':'＋')+rub(Math.abs(w[1])))+'"><i aria-label="'+esc((w[1]<0?'Расход превышает доход: ':'Чистый доход: ')+rub(Math.abs(w[1])))+'" style="height:'+Math.max(3,Math.abs(w[1])/max*100)+'px;background:'+(w[1]<0?'var(--red)':'var(--green)')+'"></i><span>'+w[2]+'</span></div>').join('');$('weekTotal').textContent=(sum>=0?'+':'−')+rub(Math.abs(sum));let monthStart=iso(new Date(now.getFullYear(),now.getMonth(),1)),monthRows=Object.values(entries).filter(e=>e.date>=monthStart&&e.date<=t),mi=monthRows.filter(e=>e.kind!=='spent').reduce((a,e)=>a+(+e.amount),0),mo=monthRows.filter(e=>e.kind==='spent').reduce((a,e)=>a+(+e.amount),0),mn=mi-mo;$('monthIncome').textContent=rub(mi);$('monthSpent').textContent=rub(mo);$('monthNet').textContent=(mn<0?'−':'')+rub(Math.abs(mn));$('monthNet').className=mn<0?'neg':'pos';
-let recent=Object.entries(entries).sort((a,b)=>b[1].date.localeCompare(a[1].date)).slice(0,5);$('recent').innerHTML=recent.length?recent.map(x=>row(x[0],x[1])).join(''):'<div class="empty">Добавь первую операцию.</div>';renderAchievements();history()}
-function setKind(k){kind=k;document.querySelectorAll('#kinds button').forEach(b=>b.classList.toggle('on',b.dataset.kind===k));$('hoursWrap').hidden=k!=='delivery'}
-function add(){let amount=Number($('amount').value),date=$('date').value||today(),hours=Number($('hours').value)||0;if(!(amount>=1)||!Number.isFinite(amount)||amount>1000000000){toast('Введи сумму от 1 до 1 000 000 000 ₽');return}if(!validDate(date)||date>today()){toast('Проверь дату операции');return}if(!Number.isFinite(hours)||hours<0||hours>24*31){toast('Проверь количество часов (от 0 до 744)');return}let wasEditing=editingId,id=editingId||('e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),previous=wasEditing?{...entries[id]}:null;entries[id]={date,amount:Math.round(amount),hours:kind==='delivery'?hours:0,kind,note:$('note').value.trim().slice(0,100),ts:wasEditing?(entries[id].ts||Date.now()):Date.now()};if(!save()){if(wasEditing)entries[id]=previous;else delete entries[id];return}editingId=null;$('amount').value='';$('hours').value='';$('note').value='';$('date').value=today();$('entryFormTitle').textContent='Новая операция';$('saveEntry').textContent='Сохранить операцию';$('cancelEntry').hidden=true;toast('Операция сохранена');nav('home')}
-function backup(){let b=new Blob([JSON.stringify({app:'KopilkaMoto',version:5,exportedAt:new Date().toISOString(),entries,settings},null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='kopilkamoto-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('Копия скачана')}
-async function restore(f){try{if(!f||f.size>5*1024*1024)throw Error('file too large');let d=JSON.parse(await f.text());if(!d||typeof d!=='object'||!d.entries||!d.settings||typeof d.entries!=='object'||Array.isArray(d.entries)||typeof d.settings!=='object'||Array.isArray(d.settings))throw Error('invalid backup');let clean=cleanEntries(d.entries),nextSettings=cleanSettings(d.settings);if(!confirm('Заменить текущие данные копией?'))return;let previousEntries=entries,previousSettings=settings;entries=clean;settings=nextSettings;if(!save()){entries=previousEntries;settings=previousSettings;return}$('goalInput').value=settings.goal;$('startInput').value=settings.start;$('startDateInput').value=settings.startDate;$('deadlineInput').value=settings.deadline;render();toast('Копия восстановлена. Импортировано операций: '+Object.keys(clean).length)}catch(e){toast('Не удалось восстановить копию. Проверь JSON-файл.')}}
-function exportCSV(){let rows=[['Дата','Тип','Сумма, RUB','Часы','Комментарий'],...Object.values(entries).sort((a,b)=>a.date.localeCompare(b.date)).map(e=>[e.date,e.kind==='delivery'?'Доставка':e.kind==='spent'?'Расход':'Другой доход',e.kind==='spent'?-Math.abs(+e.amount):Math.abs(+e.amount),e.hours||0,e.note||''])];let csv='\uFEFF'+rows.map(r=>r.map(v=>{let x=String(v??'');if(typeof v==='string'&&/^[=+@\-\t\r]/.test(x))x="'"+x;return '"'+x.replace(/"/g,'""')+'"'}).join(';')).join('\r\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kopilkamoto-history-'+today()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('CSV-файл подготовлен')}
-function bubble(role,text){let d=document.createElement('div');d.className='bubble '+role;d.textContent=text;$('chat').append(d);$('chat').scrollTop=$('chat').scrollHeight}
-async function ask(){let q=$('question').value.trim();if(!q||$('send').disabled)return;if(!prefs.apiUrl){toast('Укажи URL прокси в настройках');nav('settings');return}$('question').value='';bubble('user',q);messages.push({role:'user',content:q});$('send').disabled=true;let controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);try{let r=await fetch(prefs.apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messages.slice(-12),context:{goal:settings.goal,balance:total(),remaining:Math.max(0,settings.goal-total()),currency:'RUB',transactions:Object.values(entries).slice(-80).map(e=>({date:e.date,kind:e.kind,amount:e.amount,hours:e.hours,note:e.note}))}}),signal:controller.signal});if(!r.ok)throw Error('HTTP '+r.status);let d=await r.json(),answer=d.reply||d.choices?.[0]?.message?.content||'Нет ответа';messages.push({role:'assistant',content:answer});bubble('ai',answer)}catch(e){bubble('ai',e.name==='AbortError'?'Сервер долго не отвечает. Попробуй ещё раз.':'Не удалось подключиться к прокси. Проверь URL и настройки CORS. '+e.message)}finally{clearTimeout(timer);$('send').disabled=false}}
-$('date').value=today();$('saveEntry').onclick=add;$('cancelEntry').onclick=()=>{editingId=null;$('amount').value='';$('hours').value='';$('note').value='';$('date').value=today();$('entryFormTitle').textContent='Новая операция';$('saveEntry').textContent='Сохранить операцию';$('cancelEntry').hidden=true;nav('home')};$('kinds').onclick=e=>{let b=e.target.closest('[data-kind]');if(b)setKind(b.dataset.kind)};document.querySelectorAll('[data-amount]').forEach(b=>b.onclick=()=>$('amount').value=+$('amount').value+(+b.dataset.amount));document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>nav(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{if(b.dataset.kind)setKind(b.dataset.kind);nav(b.dataset.go)});document.addEventListener('click',e=>{let ed=e.target.closest('.edit');if(ed){editEntry(ed.dataset.id);return}let b=e.target.closest('.del');if(b&&confirm('Удалить операцию?')){let id=b.dataset.id,previous=entries[id];delete entries[id];if(!save()){entries[id]=previous;return}render();history()}});$('saveSettings').onclick=()=>{let goal=Number($('goalInput').value),start=Number($('startInput').value),startDate=$('startDateInput').value,deadline=$('deadlineInput').value;if(!Number.isFinite(goal)||goal<1||goal>1000000000||!Number.isFinite(start)||start<0||start>1000000000){toast('Проверь суммы цели и стартового баланса');return}if(!validDate(startDate)||!validDate(deadline)||deadline<=startDate){toast('Дата завершения должна быть позже даты начала');return}let previous={...settings};settings={...settings,goal:Math.round(goal),start:Math.round(start),startDate,deadline};if(save()){render();toast('Цель и сроки сохранены')}else{settings=previous;$('goalInput').value=settings.goal;$('startInput').value=settings.start;$('startDateInput').value=settings.startDate;$('deadlineInput').value=settings.deadline}};$('themeBtn').onclick=()=>{prefs.theme=prefs.theme==='auto'?'dark':prefs.theme==='dark'?'light':'auto';savePrefs();theme()};$('theme').onchange=e=>{prefs.theme=e.target.value;savePrefs();theme()};$('saveApi').onclick=()=>{try{let u=$('apiUrl').value.trim();if(u&&new URL(u).protocol!=='https:')throw Error();prefs.apiUrl=u;savePrefs();toast('Адрес сохранён')}catch(e){toast('Нужен корректный HTTPS URL')}};$('export').onclick=backup;$('import').onclick=()=>$('file').click();$('file').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};$('historySearch').oninput=history;$('historyKind').onchange=history;$('historyPeriod').onchange=history;$('csvExport').onclick=exportCSV;$('send').onclick=ask;$('question').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}};
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false});$('install').onclick=async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('install').hidden=true}else toast('Открой меню браузера → Установить приложение')};
-load();$('goalInput').value=settings.goal;$('startInput').value=settings.start;$('startDateInput').value=settings.startDate;$('deadlineInput').value=settings.deadline;$('apiUrl').value=prefs.apiUrl;$('theme').value=prefs.theme;theme();render();matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(prefs.theme==='auto')theme()});if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
-})();
-</script></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>KopilkaMoto</title>
+    <meta
+      name="description"
+      content="KopilkaMoto — трекер накоплений на мотоцикл. Работает офлайн, данные хранятся на устройстве."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="KopilkaMoto" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./js/app.js"></script>
+  </head>
+  <body>
+    <noscript><p class="noscript">Для работы KopilkaMoto нужно включить JavaScript.</p></noscript>
+    <div class="app">
+      <header class="top">
+        <div class="brand">
+          <img class="logo" src="./icons/icon.svg" alt="" width="42" height="42" />
+          <div>
+            <h1>KopilkaMoto</h1>
+            <p class="tagline">Твоя мечта ближе каждый день</p>
+          </div>
+        </div>
+        <button
+          class="icon-btn theme-btn"
+          id="themeBtn"
+          type="button"
+          aria-label="Тема: как в системе"
+          data-mode="auto"
+        >
+          <svg class="ti ti-auto" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" />
+          </svg>
+          <svg class="ti ti-light" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.5" fill="currentColor" />
+            <path
+              d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          <svg class="ti ti-dark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor" />
+          </svg>
+        </button>
+      </header>
+
+      <div id="banners" class="banners">
+        <div class="banner" id="updateBanner" hidden>
+          <p>Доступна новая версия приложения.</p>
+          <div class="banner-actions">
+            <button class="btn primary small" id="updateBtn" type="button">Обновить</button>
+          </div>
+        </div>
+        <div class="banner warn" id="storageBanner" hidden>
+          <p>
+            Браузер запрещает сохранять данные (возможно, включён приватный режим). Записи пропадут после
+            закрытия страницы.
+          </p>
+        </div>
+        <div class="banner warn" id="dataBanner" hidden>
+          <p id="dataBannerText"></p>
+          <div class="banner-actions">
+            <button class="btn small" id="dataBannerDownload" type="button">Скачать исходные данные</button>
+            <button class="btn small ghost" id="dataBannerClose" type="button">Понятно</button>
+          </div>
+        </div>
+        <div class="banner" id="backupBanner" hidden>
+          <p id="backupBannerText"></p>
+          <div class="banner-actions">
+            <button class="btn primary small" id="backupBannerSave" type="button">Скачать копию</button>
+            <button class="btn small ghost" id="backupBannerLater" type="button">Позже</button>
+          </div>
+        </div>
+      </div>
+
+      <main id="main">
+        <!-- ГЛАВНАЯ -->
+        <section class="page" id="page-home" aria-labelledby="h-home">
+          <h2 id="h-home" class="visually-hidden" tabindex="-1">Главная</h2>
+
+          <form class="card onboarding" id="onboarding" hidden novalidate>
+            <h3>Давай настроим цель</h3>
+            <p class="hint">Это займёт полминуты. Всё можно изменить позже в настройках.</p>
+            <label class="field"
+              >Сколько стоит мотоцикл, ₽
+              <input id="obGoal" inputmode="decimal" autocomplete="off" placeholder="600 000" required />
+            </label>
+            <label class="field"
+              >Уже отложено, ₽
+              <input id="obStart" inputmode="decimal" autocomplete="off" placeholder="0" />
+            </label>
+            <label class="field"
+              >Когда хочешь купить
+              <input id="obDeadline" type="date" required />
+            </label>
+            <p class="field-error" id="obError" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">Начать копить</button>
+              <button class="btn ghost" id="obSkip" type="button">Пропустить</button>
+            </div>
+          </form>
+
+          <div class="hero">
+            <p class="hero-label">Мои накопления</p>
+            <p class="total" id="total">0 ₽</p>
+            <p class="goal" id="goalText"></p>
+            <div
+              class="progress"
+              id="progress"
+              role="progressbar"
+              aria-label="Прогресс к цели"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <span id="fill"></span>
+            </div>
+            <div class="meta"><span id="pct">0%</span><span id="left"></span></div>
+          </div>
+
+          <dl class="stats">
+            <div class="stat">
+              <dt>Нужно в день</dt>
+              <dd id="perDay">—</dd>
+            </div>
+            <div class="stat">
+              <dt>Доход/час</dt>
+              <dd id="perHour">—</dd>
+            </div>
+            <div class="stat">
+              <dt>До цели</dt>
+              <dd id="daysLeft">—</dd>
+            </div>
+          </dl>
+          <p class="status neutral" id="status">Добавь первую запись.</p>
+
+          <h3 class="head">Быстрое действие</h3>
+          <div class="actions">
+            <button class="action primary" type="button" data-add="delivery">
+              ＋ Добавить доход<small>Доставка или подработка</small>
+            </button>
+            <button class="action" type="button" data-add="spent">
+              − Записать расход<small>Учесть трату из копилки</small>
+            </button>
+          </div>
+
+          <div class="head">
+            <h3>Чистые накопления за 7 дней</h3>
+            <span id="weekTotal" class="hint"></span>
+          </div>
+          <div class="card">
+            <div class="chart" id="chart" role="group" aria-label="Чистый результат по дням"></div>
+            <p class="hint chart-detail" id="chartDetail" aria-live="polite"></p>
+          </div>
+
+          <h3 class="head">Этот месяц</h3>
+          <dl class="stats">
+            <div class="stat">
+              <dt>Доходы</dt>
+              <dd class="pos" id="monthIncome">0 ₽</dd>
+            </div>
+            <div class="stat">
+              <dt>Расходы</dt>
+              <dd class="neg" id="monthSpent">0 ₽</dd>
+            </div>
+            <div class="stat">
+              <dt>Чистый итог</dt>
+              <dd id="monthNet">0 ₽</dd>
+            </div>
+          </dl>
+
+          <div class="head">
+            <h3>Мои достижения</h3>
+            <span class="hint" id="streakLabel"></span>
+          </div>
+          <div class="card">
+            <ul class="badges" id="achievements"></ul>
+            <p class="hint" id="nextAchievement"></p>
+          </div>
+
+          <div class="head">
+            <h3>Последние операции</h3>
+            <a class="btn small" href="#history">Вся история</a>
+          </div>
+          <div class="card"><ul class="entries" id="recent"></ul></div>
+        </section>
+
+        <!-- ДОБАВЛЕНИЕ -->
+        <section class="page" id="page-add" aria-labelledby="h-add" hidden>
+          <h2 class="head page-title" id="h-add" tabindex="-1">Новая операция</h2>
+          <form class="card" id="entryForm" novalidate>
+            <div class="seg" id="kinds" role="group" aria-label="Тип операции">
+              <button type="button" data-kind="delivery" aria-pressed="true">Доставка</button>
+              <button type="button" data-kind="other" aria-pressed="false">Доход</button>
+              <button type="button" data-kind="spent" aria-pressed="false">Расход</button>
+            </div>
+            <label class="field"
+              >Сумма, ₽
+              <input
+                id="amount"
+                inputmode="decimal"
+                autocomplete="off"
+                enterkeyhint="done"
+                placeholder="Например, 5000"
+                required
+              />
+            </label>
+            <div class="chips" id="quickAmounts" role="group" aria-label="Прибавить к сумме">
+              <button class="btn small" type="button" data-amount="500">+500</button>
+              <button class="btn small" type="button" data-amount="1500">+1 500</button>
+              <button class="btn small" type="button" data-amount="3000">+3 000</button>
+              <button class="btn small" type="button" data-amount="5000">+5 000</button>
+            </div>
+            <div class="grid">
+              <label class="field">Дата <input id="date" type="date" required /></label>
+              <label class="field" id="hoursWrap"
+                >Часы работы
+                <input id="hours" inputmode="decimal" autocomplete="off" placeholder="8" />
+              </label>
+            </div>
+            <label class="field"
+              >Комментарий
+              <input id="note" maxlength="100" autocomplete="off" placeholder="Смена, бонус, ремонт..." />
+            </label>
+            <p class="field-error" id="formError" role="alert" hidden></p>
+            <div class="form-actions">
+              <button class="btn primary" id="saveEntry" type="submit">Сохранить операцию</button>
+              <button class="btn" id="cancelEntry" type="button" hidden>Отмена</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- ИСТОРИЯ -->
+        <section class="page" id="page-history" aria-labelledby="h-history" hidden>
+          <div class="head">
+            <h2 id="h-history" tabindex="-1">История операций</h2>
+            <span id="count" class="hint"></span>
+          </div>
+          <div class="card">
+            <label class="field"
+              >Поиск
+              <input id="historySearch" type="search" placeholder="Например, смена или ремонт" />
+            </label>
+            <div class="grid">
+              <label class="field"
+                >Тип операции
+                <select id="historyKind">
+                  <option value="all">Все операции</option>
+                  <option value="delivery">Доставка</option>
+                  <option value="other">Другой доход</option>
+                  <option value="spent">Расход</option>
+                </select>
+              </label>
+              <label class="field"
+                >Период
+                <select id="historyPeriod">
+                  <option value="all">За всё время</option>
+                  <option value="month">Этот месяц</option>
+                  <option value="30">Последние 30 дней</option>
+                </select>
+              </label>
+            </div>
+            <button class="btn wide" id="csvExport" type="button">Скачать историю в CSV</button>
+          </div>
+          <div class="card spaced" id="historySummary"></div>
+          <div class="card spaced"><ul class="entries" id="list"></ul></div>
+        </section>
+
+        <!-- AI -->
+        <section class="page" id="page-ai" aria-labelledby="h-ai" hidden>
+          <div class="head">
+            <h2 id="h-ai" tabindex="-1">AI-помощник</h2>
+            <button class="btn small ghost" id="clearChat" type="button">Очистить чат</button>
+          </div>
+          <div class="card">
+            <div
+              class="chat"
+              id="chat"
+              role="log"
+              aria-live="polite"
+              aria-label="Переписка с помощником"
+            ></div>
+            <form class="chatrow" id="chatForm" novalidate>
+              <label class="visually-hidden" for="question">Вопрос помощнику</label>
+              <textarea
+                id="question"
+                rows="2"
+                maxlength="1000"
+                placeholder="Как быстрее накопить?"
+              ></textarea>
+              <button class="btn primary send" id="send" type="submit" aria-label="Отправить вопрос">
+                ➤
+              </button>
+            </form>
+            <p class="hint">
+              При отправке вопроса помощнику передаются цель, сроки, баланс и до 80 последних операций с
+              комментариями. Не записывай в комментарии пароли, номера карт и другие секреты.
+            </p>
+          </div>
+        </section>
+
+        <!-- НАСТРОЙКИ -->
+        <section class="page" id="page-settings" aria-labelledby="h-settings" hidden>
+          <h2 class="head page-title" id="h-settings" tabindex="-1">Настройки</h2>
+          <form class="card" id="settingsForm" novalidate>
+            <h3>Цель и сроки</h3>
+            <div class="grid">
+              <label class="field"
+                >Цель, ₽ <input id="goalInput" inputmode="decimal" autocomplete="off"
+              /></label>
+              <label class="field"
+                >Уже отложено, ₽ <input id="startInput" inputmode="decimal" autocomplete="off"
+              /></label>
+            </div>
+            <div class="grid">
+              <label class="field">Начало плана <input id="startDateInput" type="date" /></label>
+              <label class="field">Дата цели <input id="deadlineInput" type="date" /></label>
+            </div>
+            <p class="field-error" id="settingsError" role="alert" hidden></p>
+            <button class="btn primary wide" type="submit">Сохранить цель и сроки</button>
+          </form>
+
+          <div class="card spaced">
+            <h3>Оформление</h3>
+            <label class="field"
+              >Тема
+              <select id="theme">
+                <option value="auto">Как в системе</option>
+                <option value="light">Светлая</option>
+                <option value="dark">Тёмная</option>
+              </select>
+            </label>
+          </div>
+
+          <form class="card spaced" id="apiForm" novalidate>
+            <h3>AI-помощник</h3>
+            <label class="field"
+              >URL прокси (Cloudflare Worker)
+              <input
+                id="apiUrl"
+                type="url"
+                inputmode="url"
+                autocomplete="off"
+                placeholder="https://kopilkamoto-ai.example.workers.dev"
+              />
+            </label>
+            <button class="btn primary wide" type="submit">Сохранить адрес</button>
+            <p class="hint">
+              Секретный ключ OpenAI сюда не вставляй — он хранится только в Worker. Нужен только URL.
+            </p>
+          </form>
+
+          <div class="card spaced">
+            <h3>Резервная копия</h3>
+            <p class="hint" id="backupInfo"></p>
+            <div class="grid">
+              <button class="btn" id="export" type="button">Скачать JSON</button>
+              <button class="btn" id="import" type="button">Восстановить JSON</button>
+            </div>
+            <input id="file" type="file" accept=".json,application/json" hidden />
+            <p class="hint" id="storageInfo"></p>
+            <div id="rawCopies" hidden>
+              <h4>Сохранённые исходные данные</h4>
+              <p class="hint">
+                Копии данных, которые не удалось прочитать или которые были заменены при восстановлении.
+              </p>
+              <ul class="raw-list" id="rawList"></ul>
+            </div>
+          </div>
+
+          <div class="card spaced">
+            <h3>Приложение</h3>
+            <button class="btn primary wide" id="install" type="button" hidden>Установить приложение</button>
+            <p class="hint" id="installHint"></p>
+            <p class="hint" id="versionInfo"></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <nav class="nav" aria-label="Разделы">
+      <div class="navin">
+        <a href="#home" data-nav="home"><span aria-hidden="true">⌂</span>Главная</a>
+        <a href="#add" data-nav="add"><span aria-hidden="true">＋</span>Добавить</a>
+        <a href="#history" data-nav="history"><span aria-hidden="true">▤</span>История</a>
+        <a href="#ai" data-nav="ai"><span aria-hidden="true">✦</span>AI</a>
+        <a href="#settings" data-nav="settings"><span aria-hidden="true">⚙</span>Настройки</a>
+      </div>
+    </nav>
+
+    <div class="toast" id="toast" hidden>
+      <span id="toastText"></span>
+      <button class="toast-action" id="toastAction" type="button" hidden></button>
+    </div>
+    <div class="visually-hidden" id="announcer" role="status" aria-live="polite"></div>
+
+    <dialog class="dialog" id="dialog" aria-labelledby="dialogTitle">
+      <form method="dialog">
+        <h3 id="dialogTitle"></h3>
+        <p id="dialogText"></p>
+        <div class="form-actions">
+          <button class="btn primary" value="ok" id="dialogOk">OK</button>
+          <button class="btn" value="cancel" id="dialogCancel">Отмена</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
