@@ -37,3 +37,20 @@ test('в интерфейсе нет эмодзи и декоративных ю
     assert.equal(found, null, `${f}: ${found?.join(' ')}`);
   }
 });
+
+test('все картинки из src/srcset в index.html существуют и лежат в офлайн-кеше', async () => {
+  const html = await readFile('index.html', 'utf8');
+  const sw = await readFile('service-worker.js', 'utf8');
+  const urls = new Set();
+  for (const m of html.matchAll(/\s(?:src|srcset|href)="([^"]+)"/g)) {
+    for (const part of m[1].split(',')) {
+      const url = part.trim().split(/\s+/)[0];
+      if (url.startsWith('./') && /\.(webp|png|svg|woff2|css|js)$/.test(url)) urls.add(url);
+    }
+  }
+  assert.ok(urls.has('./images/dream-bike-480.webp'));
+  for (const url of urls) {
+    await access(url.slice(2));
+    assert.ok(sw.includes(`'${url}'`), `${url} нет в SHELL service worker`);
+  }
+});

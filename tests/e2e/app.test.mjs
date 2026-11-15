@@ -433,7 +433,13 @@ test('мотоцикл мечты на главной: серый в начал�
       ),
     );
   const empty = await open(ctx, env.base, { storage: configured() });
-  assert.equal(await empty.evaluate(() => document.getElementById('dreamBike').naturalWidth), 800);
+  // картинка загрузилась; на узком экране — облегчённая версия 480 px
+  const img = await empty.evaluate(() => {
+    const el = document.getElementById('dreamBike');
+    return { w: el.naturalWidth, src: el.currentSrc };
+  });
+  assert.ok(img.w > 0, JSON.stringify(img));
+  assert.match(img.src, /dream-bike-480\.webp$/);
   assert.equal(await gray(empty), 1);
   const half = await open(ctx, env.base, { storage: configured({ a: entry(today(), 300000) }) });
   assert.equal(await gray(half), 0.5);
@@ -506,5 +512,69 @@ test('частые расходы и замок до цели: сначала п
   assert.match(await page.textContent('#dialogTitle'), /Взять 400/);
   await page.click('#dialogCancel');
   assert.deepEqual((await stored(page)).entries, {});
+  await ctx.close();
+});
+
+test('переезд на новый телефон: копия переносит частые расходы, замок и тему', async () => {
+  const ctx = await env.context();
+  const old = await open(ctx, env.base, {
+    storage: {
+      ...configured({ a: entry(today(), 500) }),
+      'kopilkamoto-prefs-v2': {
+        theme: 'dark',
+        lock: true,
+        lockSince: 1,
+        presets: [{ note: 'Бензин', amount: 1500 }],
+      },
+    },
+    hash: '#settings',
+  });
+  const [dl] = await Promise.all([old.waitForEvent('download'), old.click('#export')]);
+  const file = await readFile(await dl.path());
+  await ctx.close();
+
+  const fresh = await env.context();
+  const page = await open(fresh, env.base, { storage: configured(), hash: '#settings' });
+  await page.setInputFiles('#file', { name: 'b.json', mimeType: 'application/json', buffer: file });
+  await page.waitForSelector('#dialog[open]');
+  await page.click('#dialogOk');
+  await page.waitForFunction(() =>
+    document.querySelector('#toastText').textContent.startsWith('Копия восстановлена'),
+  );
+  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('kopilkamoto-prefs-v2')));
+  assert.deepEqual(
+    [prefs.presets, prefs.lock, prefs.theme],
+    [[{ note: 'Бензин', amount: 1500 }], true, 'dark'],
+  );
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
+  assert.equal(await page.isChecked('#lockToggle'), true);
+  // «Отменить» возвращает и прежние настройки
+  await page.click('#toastAction');
+  const back = await page.evaluate(() => JSON.parse(localStorage.getItem('kopilkamoto-prefs-v2')));
+  assert.deepEqual(
+    back.presets.map((p) => p.note),
+    ['Электричка', 'Еда'],
+  );
+  assert.equal(back.lock, false);
+  await fresh.close();
+});
+
+test('«Куда ушли деньги»: расходы месяца по категориям на главной', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, {
+    storage: configured({
+      a: entry(today(), 400, 'spent', { note: 'Еда' }),
+      b: entry(today(), 100, 'spent', { note: 'Электричка' }),
+      c: entry(today(), 5000),
+    }),
+  });
+  assert.equal(await page.isVisible('#spendWrap'), true);
+  assert.deepEqual(await page.locator('#spendList .spend-label').allTextContents(), ['Еда', 'Электричка']);
+  assert.match(await page.textContent('#spendList li:first-child .spend-sum'), /400\s₽ · 80%/);
+  // одно нажатие частого расхода — разбивка обновилась
+  await page.click('#quickSpend [aria-label^="Записать расход: Электричка"]');
+  assert.match(await page.textContent('#spendList li:nth-child(2) .spend-sum'), /200\s₽ · 33%/);
+  const empty = await open(ctx, env.base, { storage: configured({ c: entry(today(), 5000) }) });
+  assert.equal(await empty.isVisible('#spendWrap'), false);
   await ctx.close();
 });

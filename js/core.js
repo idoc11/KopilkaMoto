@@ -7,7 +7,7 @@ export const RAW_PREFIX = 'moto-tracker-v1-raw-';
 /** Сколько последних копий исходных данных хранить (каждая — полный объём данных). */
 export const MAX_RAW_COPIES = 5;
 export const SCHEMA_VERSION = 2;
-export const BACKUP_VERSION = 6;
+export const BACKUP_VERSION = 7;
 export const APP_NAMES = ['KopilkaMoto', 'moto-savings-tracker'];
 
 export const DEFAULT_GOAL = 600000;
@@ -431,14 +431,31 @@ export function buildCsv(entries) {
   return '﻿' + rows.map((r) => r.map(csvCell).join(';')).join('\r\n');
 }
 
-export function buildBackup(state, now = new Date()) {
-  return {
+const THEMES = ['auto', 'light', 'dark'];
+
+/**
+ * Резервная копия. Кроме данных переносит настройки, которые нужны на новом телефоне:
+ * частые расходы, замок до цели, тему. Адрес прокси не включается.
+ */
+export function buildBackup(state, now = new Date(), prefs = null) {
+  const backup = {
     app: 'KopilkaMoto',
     version: BACKUP_VERSION,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: now.toISOString(),
     entries: state.entries,
     settings: state.settings,
+  };
+  if (prefs) backup.preferences = { presets: prefs.presets, lock: prefs.lock === true, theme: prefs.theme };
+  return backup;
+}
+
+function parsePreferences(p) {
+  if (!isPlainObject(p)) return null;
+  return {
+    presets: Array.isArray(p.presets) ? normalizePresets(p.presets) : [],
+    lock: p.lock === true,
+    theme: THEMES.includes(p.theme) ? p.theme : 'auto',
   };
 }
 
@@ -467,6 +484,7 @@ export function parseBackup(text, today) {
     rejected,
     fixes,
     total: Object.keys(data.entries).length,
+    preferences: parsePreferences(data.preferences),
   };
 }
 
@@ -663,4 +681,33 @@ export function normalizePresets(list) {
     if (out.length === MAX_PRESETS) break;
   }
   return out;
+}
+
+// ---------- Куда ушли деньги ----------
+
+/** Расходы текущего месяца по комментарию (подпись — как в самой свежей записи): крупные сверху, хвост — в «Остальное». */
+export function spendingBreakdown(entries, today, limit = 4) {
+  const prefix = today.slice(0, 7);
+  const groups = new Map();
+  for (const e of sortEntries(entries)) {
+    if (e[1].kind !== 'spent' || !e[1].date.startsWith(prefix)) continue;
+    const label = e[1].note.trim() || 'Без комментария';
+    const key = label.toLowerCase();
+    const g = groups.get(key) || { label, amount: 0 };
+    g.amount += e[1].amount;
+    groups.set(key, g);
+  }
+  const sorted = [...groups.values()].sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label));
+  const total = roundMoney(sorted.reduce((s, g) => s + g.amount, 0));
+  const top = sorted.slice(0, limit);
+  const rest = sorted.slice(limit).reduce((s, g) => s + g.amount, 0);
+  if (rest > 0) top.push({ label: 'Остальное', amount: rest });
+  return {
+    total,
+    items: top.map((g) => ({
+      label: g.label,
+      amount: roundMoney(g.amount),
+      share: total ? g.amount / total : 0,
+    })),
+  };
 }

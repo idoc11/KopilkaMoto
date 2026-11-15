@@ -412,3 +412,58 @@ test('частые расходы: значения по умолчанию, п�
   const many = Array.from({ length: 20 }, (_, i) => ({ note: 'P' + i, amount: 1 }));
   assert.equal(core.normalizePresets(many).length, core.MAX_PRESETS);
 });
+
+test('резервная копия переносит частые расходы, замок и тему', () => {
+  const s = st({ a: e(T, 100) });
+  const prefs = {
+    presets: [{ note: 'Бензин', amount: 1500 }],
+    lock: true,
+    theme: 'dark',
+    apiUrl: 'https://secret.example/',
+  };
+  const json = JSON.stringify(core.buildBackup(s, new Date(), prefs));
+  assert.doesNotMatch(json, /secret\.example/, 'адрес прокси в копию не попадает');
+  const back = core.parseBackup(json, T);
+  assert.deepEqual(back.preferences, {
+    presets: [{ note: 'Бензин', amount: 1500 }],
+    lock: true,
+    theme: 'dark',
+  });
+  // старые копии без настроек — текущие настройки не трогаем
+  assert.equal(core.parseBackup(JSON.stringify(core.buildBackup(s)), T).preferences, null);
+  // мусор в настройках копии отбрасывается
+  const junk = { ...core.buildBackup(s), preferences: { presets: 'x', lock: 'yes', theme: 'neon' } };
+  assert.deepEqual(core.parseBackup(JSON.stringify(junk), T).preferences, {
+    presets: [],
+    lock: false,
+    theme: 'auto',
+  });
+});
+
+test('куда ушли деньги: расходы месяца по комментарию, крупные сверху, остальное в конце', () => {
+  const entries = {
+    a: e(T, 400, 'spent', { note: 'Еда' }),
+    b: e('2026-11-03', 400, 'spent', { note: ' еда ' }),
+    c: e(T, 100, 'spent', { note: 'Электричка' }),
+    d: e(T, 1500, 'spent', { note: 'Бензин' }),
+    f: e(T, 50, 'spent', { note: '' }),
+    g: e(T, 30, 'spent', { note: 'Жвачка' }),
+    h: e(T, 20, 'spent', { note: 'Вода' }),
+    old: e('2026-10-31', 9999, 'spent', { note: 'Еда' }),
+    inc: e(T, 5000),
+  };
+  const r = core.spendingBreakdown(entries, T, 4);
+  assert.deepEqual(
+    r.items.map((x) => [x.label, x.amount]),
+    [
+      ['Бензин', 1500],
+      ['Еда', 800],
+      ['Электричка', 100],
+      ['Без комментария', 50],
+      ['Остальное', 50],
+    ],
+  );
+  assert.equal(r.total, 2500);
+  assert.equal(r.items[0].share, 0.6);
+  assert.deepEqual(core.spendingBreakdown({ inc: e(T, 1) }, T).items, []);
+});

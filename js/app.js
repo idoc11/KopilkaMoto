@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.5.0';
+const APP_VERSION = '6.6.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -389,6 +389,23 @@ function renderHome() {
   const net = $('monthNet');
   net.textContent = (m.net < 0 ? '−' : '') + core.formatRub(Math.abs(m.net));
   net.className = m.net < 0 ? 'neg' : 'pos';
+
+  const spend = core.spendingBreakdown(state.entries, t);
+  $('spendWrap').hidden = !spend.items.length;
+  $('spendList').replaceChildren(
+    ...spend.items.map((x) => {
+      const pct = Math.round(x.share * 100);
+      const bar = h('span', { className: 'spend-fill' });
+      bar.style.width = `${Math.max(2, x.share * 100)}%`;
+      return h(
+        'li',
+        {},
+        h('span', { className: 'spend-label', text: x.label }),
+        h('span', { className: 'spend-sum', text: `${core.formatRub(x.amount)} · ${pct}%` }),
+        h('span', { className: 'spend-bar', 'aria-hidden': 'true' }, bar),
+      );
+    }),
+  );
 
   const a = core.achievements(state, t);
   const unlocked = new Set(a.items.filter((x) => x.done).map((x) => x.title));
@@ -1043,7 +1060,7 @@ function submitApi(ev) {
 function exportBackup() {
   download(
     `kopilkamoto-${today()}.json`,
-    JSON.stringify(core.buildBackup(state), null, 2),
+    JSON.stringify(core.buildBackup(state, new Date(), prefs), null, 2),
     'application/json',
   );
   prefs.lastBackupAt = Date.now();
@@ -1082,8 +1099,10 @@ async function importBackup(file) {
   });
   if (!ok) return;
   const previous = state;
+  const previousPrefs = { ...prefs };
   if (current) store.preserveRaw(core.serializeState(previous));
   if (!commit(parsed.state, { change: false })) return;
+  if (parsed.preferences) applyBackupPreferences(parsed.preferences);
   if (ui.editingId) resetForm();
   ui.showOnboarding = false;
   renderAll();
@@ -1095,12 +1114,24 @@ async function importBackup(file) {
       duration: 8000,
       onAction: () => {
         if (commit(previous, { change: false })) {
+          prefs = previousPrefs;
+          savePrefs();
+          applyTheme();
           renderAll();
           toast('Прежние данные возвращены');
         }
       },
     },
   );
+}
+
+/** Настройки из копии: частые расходы, замок, тема. Адрес прокси и даты копий остаются местными. */
+function applyBackupPreferences(p) {
+  const lockChanged = p.lock !== prefs.lock;
+  prefs = { ...prefs, presets: p.presets, lock: p.lock, theme: p.theme };
+  if (lockChanged) prefs.lockSince = p.lock ? Date.now() : 0;
+  savePrefs();
+  applyTheme();
 }
 
 function exportCsv() {

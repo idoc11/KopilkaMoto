@@ -177,6 +177,8 @@
               <img
                 id="dreamBike"
                 src="./images/dream-bike.webp"
+                srcset="./images/dream-bike-480.webp 480w, ./images/dream-bike.webp 800w"
+                sizes="(max-width: 425px) calc(100vw - 32px), 393px"
                 alt="Мотоцикл мечты"
                 width="800"
                 height="468"
@@ -260,6 +262,11 @@
               <dd id="monthNet">0 ₽</dd>
             </div>
           </dl>
+
+          <div id="spendWrap" hidden>
+            <h3 class="head">Куда ушли деньги</h3>
+            <ul class="spend" id="spendList"></ul>
+          </div>
 
           <div class="head">
             <h3>Отметки</h3>
