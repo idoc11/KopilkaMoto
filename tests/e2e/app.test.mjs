@@ -357,3 +357,34 @@ test('приложение открыто через полночь: в ново
   assert.equal(await page.inputValue('#date'), '2026-11-22');
   await ctx.close();
 });
+
+test('удаление с клавиатуры: фокус переходит на соседнюю запись, а не теряется', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, {
+    storage: configured({
+      a: entry(today(), 1, 'delivery', { note: 'A', ts: 3 }),
+      b: entry(today(), 2, 'delivery', { note: 'B', ts: 2 }),
+      c: entry(today(), 3, 'delivery', { note: 'C', ts: 1 }),
+    }),
+    hash: '#history',
+  });
+  await page.focus('#list [aria-label^="Удалить: B"]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list [aria-label^="Удалить: B"]'));
+  assert.match(
+    await page.evaluate(() => document.activeElement.getAttribute('aria-label') || ''),
+    /^Удалить: C/,
+  );
+  // последняя запись — фокус на предыдущую
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list [aria-label^="Удалить: C"]'));
+  assert.match(
+    await page.evaluate(() => document.activeElement.getAttribute('aria-label') || ''),
+    /^Удалить: A/,
+  );
+  // список пуст — фокус на заголовок раздела
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list .entry'));
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'h-history');
+  await ctx.close();
+});

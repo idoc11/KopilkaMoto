@@ -785,7 +785,20 @@ async function submitEntry(ev) {
 
 function deleteEntry(id, row) {
   if (!state.entries[id]) return;
-  leave(row, () => removeEntry(id));
+  const list = row?.closest('ul');
+  const index = list ? [...list.querySelectorAll('.entry')].indexOf(row) : -1;
+  leave(row, () => {
+    removeEntry(id);
+    if (list) restoreFocus(list.id, index);
+  });
+}
+
+/** После удаления строки фокус — на соседнюю запись, иначе на заголовок раздела (клавиатура, экранный диктор). */
+function restoreFocus(listId, index) {
+  const rows = [...($(listId)?.querySelectorAll('.entry') ?? [])];
+  const row = rows[index] ?? rows[index - 1];
+  const target = row?.querySelector('.entry-actions .icon-btn:last-child') ?? $('h-' + ui.page);
+  target?.focus({ preventScroll: !row });
 }
 
 function removeEntry(id) {
