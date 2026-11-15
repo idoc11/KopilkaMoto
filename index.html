@@ -278,7 +278,14 @@
               <label class="field">Дата <input id="date" type="date" required /></label>
               <label class="field" id="hoursWrap"
                 >Часы работы
-                <input type="text" id="hours" inputmode="decimal" autocomplete="off" placeholder="8" />
+                <input
+                  type="text"
+                  id="hours"
+                  autocomplete="off"
+                  placeholder="8 или 7:30"
+                  aria-describedby="hoursHint"
+                />
+                <span class="field-hint" id="hoursHint">Минуты — через двоеточие</span>
               </label>
             </div>
             <label class="field"

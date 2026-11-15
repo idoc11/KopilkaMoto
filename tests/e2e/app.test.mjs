@@ -404,3 +404,22 @@ test('встраивание в чужой сайт (кликджекинг): п
   env.overrides.delete('/evil.html');
   await ctx.close();
 });
+
+test('часы в формате 7:30: сохраняются как 7,5, показываются «7 ч 30 мин», правятся как 7:30', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, { storage: configured(), hash: '#add' });
+  await page.fill('#amount', '3000');
+  await page.fill('#hours', '7:30');
+  await page.fill('#note', 'Смена');
+  await page.click('#saveEntry');
+  const e = Object.values((await stored(page)).entries)[0];
+  assert.equal(e.hours, 7.5);
+  assert.match(await page.textContent('#recent .entry .sub'), /7 ч 30 мин/);
+  assert.match(await page.textContent('#perHour'), /400/); // 3000 ₽ / 7,5 ч
+  await page.click('#recent [aria-label^="Изменить: Смена"]');
+  assert.equal(await page.inputValue('#hours'), '7:30');
+  await page.fill('#hours', '7:75');
+  await page.click('#saveEntry');
+  assert.match(await page.textContent('#formError'), /7:30/);
+  await ctx.close();
+});

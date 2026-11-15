@@ -347,3 +347,44 @@ test('CSV: копейки через запятую — русский Excel ч�
   assert.ok(lines.includes('"2026-11-15";"Доставка";"1500,5";"7,5";""'), lines.join('\n'));
   assert.ok(lines.includes('"2026-11-15";"Расход";"-99,25";"0";""'), lines.join('\n'));
 });
+
+test('часы: формат 7:30, «7 ч 30 мин» и дроби', () => {
+  const cases = {
+    '7:30': 7.5,
+    '7:05': 7 + 5 / 60,
+    '0:45': 0.75,
+    '12:00': 12,
+    ' 8:15 ': 8.25,
+    '7.30': 7.3, // точка — это дробь, а не минуты
+    '7,5': 7.5,
+    8: 8,
+    '7 ч 30 мин': 7.5,
+    '7ч30м': 7.5,
+    '7 ч': 7,
+    '45 мин': 0.75,
+    '': 0,
+  };
+  for (const [input, want] of Object.entries(cases)) {
+    assert.ok(
+      Math.abs(core.parseHours(input) - want) < 1e-9,
+      `${JSON.stringify(input)} → ${core.parseHours(input)}`,
+    );
+  }
+  for (const bad of ['7:60', '7:5', '7:', ':30', '7:30:00', 'abc', '-1', '7 ч 75 мин']) {
+    assert.ok(Number.isNaN(core.parseHours(bad)), `${JSON.stringify(bad)} должно быть ошибкой`);
+  }
+});
+
+test('часы: показ «7 ч 30 мин» и обратное преобразование для поля ввода', () => {
+  assert.equal(core.formatHours(7.5), '7 ч 30 мин');
+  assert.equal(core.formatHours(8), '8 ч');
+  assert.equal(core.formatHours(0.75), '45 мин');
+  assert.equal(core.hoursInputValue(7.5), '7:30');
+  assert.equal(core.hoursInputValue(8), '8');
+  assert.equal(core.hoursInputValue(0), '');
+  // каждая минута переживает округление при сохранении (до сотых часа)
+  for (let m = 0; m < 60; m++) {
+    const stored = Math.round(core.parseHours(`7:${String(m).padStart(2, '0')}`) * 100) / 100;
+    assert.equal(core.hoursInputValue(stored), m ? `7:${String(m).padStart(2, '0')}` : '7');
+  }
+});
