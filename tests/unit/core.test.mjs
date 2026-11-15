@@ -337,3 +337,13 @@ test('прогноз: долгий простой — отдельное соо�
   // при простое замок не обещает сдвиг покупки
   assert.equal(core.delayDays(idle, 1000, T), null);
 });
+
+test('CSV: копейки через запятую — русский Excel читает их как числа', () => {
+  const csv = core.buildCsv({
+    a: e(T, 1500.5, 'delivery', { hours: 7.5 }),
+    b: e(T, 99.25, 'spent', { ts: 2 }),
+  });
+  const lines = csv.slice(1).split('\r\n');
+  assert.ok(lines.includes('"2026-11-15";"Доставка";"1500,5";"7,5";""'), lines.join('\n'));
+  assert.ok(lines.includes('"2026-11-15";"Расход";"-99,25";"0";""'), lines.join('\n'));
+});

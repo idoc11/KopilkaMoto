@@ -388,7 +388,8 @@ export function totalsOf(list) {
 // ---------- Экспорт / импорт ----------
 
 export function csvCell(v) {
-  let s = String(v ?? '');
+  // Числа — с запятой: файл с разделителем «;» открывают в русском Excel, где точка делает число текстом.
+  let s = typeof v === 'number' ? String(v).replace('.', ',') : String(v ?? '');
   if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return '"' + s.replace(/"/g, '""') + '"';
 }
