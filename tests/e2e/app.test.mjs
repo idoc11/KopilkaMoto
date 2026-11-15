@@ -273,7 +273,7 @@ test('настройки: проверка дат, тема, https-адрес п
   assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
   assert.match(await page.getAttribute('#themeBtn', 'aria-label'), /тёмная/);
   const meta = await page.$$eval('meta[name=theme-color]', (m) => m.map((x) => x.content));
-  assert.deepEqual(meta, ['#141413', '#141413']);
+  assert.deepEqual(meta, ['#0d0e11', '#0d0e11']);
   await ctx.close();
 });
 

@@ -28,6 +28,8 @@
   --accent: #c43c08;
   --accent-soft: color-mix(in srgb, #c43c08 11%, transparent);
   --accent-fg: #ffffff;
+  /* Оранжевый для текста на светлых плашках: контраст ≥ 4,5:1 (WCAG AA) */
+  --accent-ink: #a8320a;
   --green: #166534;
   --green-soft: color-mix(in srgb, #166534 11%, transparent);
   --red: #b91c1c;
@@ -65,6 +67,7 @@
   --accent: #ff6b2b;
   --accent-soft: color-mix(in srgb, #ff6b2b 15%, transparent);
   --accent-fg: #140700;
+  --accent-ink: var(--accent);
   --green: #4ade80;
   --green-soft: color-mix(in srgb, #4ade80 14%, transparent);
   --red: #f87171;
@@ -274,7 +277,7 @@ a {
 .link {
   font-size: 14px;
   font-weight: 650;
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 8px;
@@ -357,7 +360,7 @@ a {
   padding: 3px 10px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
 }
 .total {
@@ -1082,7 +1085,7 @@ h2.page-title {
   height: 21px;
 }
 .nav a[aria-current='page'] {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--accent-soft);
   font-weight: 700;
 }
