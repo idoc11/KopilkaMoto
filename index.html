@@ -31,6 +31,10 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./js/app.js"></script>
+    <link rel="modulepreload" href="./js/core.js" />
+    <link rel="modulepreload" href="./js/storage.js" />
+    <link rel="modulepreload" href="./js/markdown.js" />
+    <link rel="modulepreload" href="./js/motion.js" />
   </head>
   <body>
     <svg class="sprite" aria-hidden="true" focusable="false">
@@ -132,11 +136,18 @@
             <p class="hint">Потом всё можно поменять в настройках.</p>
             <label class="field"
               >Сколько стоит мотоцикл, ₽
-              <input id="obGoal" inputmode="decimal" autocomplete="off" placeholder="600 000" required />
+              <input
+                type="text"
+                id="obGoal"
+                inputmode="decimal"
+                autocomplete="off"
+                placeholder="600 000"
+                required
+              />
             </label>
             <label class="field"
               >Уже отложено, ₽
-              <input id="obStart" inputmode="decimal" autocomplete="off" placeholder="0" />
+              <input type="text" id="obStart" inputmode="decimal" autocomplete="off" placeholder="0" />
             </label>
             <label class="field"
               >Когда покупаешь
@@ -153,6 +164,7 @@
             <p class="dash-label">Накоплено</p>
             <p class="total" id="total">0 ₽</p>
             <p class="goal" id="goalText"></p>
+            <!-- [html-validate-disable-next prefer-native-element -- дорога с мотоциклом: свой progressbar с ARIA] -->
             <div
               class="road"
               id="progress"
@@ -247,6 +259,7 @@
             <label class="field"
               >Сумма, ₽
               <input
+                type="text"
                 id="amount"
                 inputmode="decimal"
                 autocomplete="off"
@@ -265,12 +278,18 @@
               <label class="field">Дата <input id="date" type="date" required /></label>
               <label class="field" id="hoursWrap"
                 >Часы работы
-                <input id="hours" inputmode="decimal" autocomplete="off" placeholder="8" />
+                <input type="text" id="hours" inputmode="decimal" autocomplete="off" placeholder="8" />
               </label>
             </div>
             <label class="field"
               >Комментарий
-              <input id="note" maxlength="100" autocomplete="off" placeholder="Смена, чаевые, бензин" />
+              <input
+                type="text"
+                id="note"
+                maxlength="100"
+                autocomplete="off"
+                placeholder="Смена, чаевые, бензин"
+              />
             </label>
             <p class="field-error" id="formError" role="alert" hidden></p>
             <div class="form-actions">
@@ -356,10 +375,10 @@
             <h3>Цель и сроки</h3>
             <div class="grid">
               <label class="field"
-                >Цель, ₽ <input id="goalInput" inputmode="decimal" autocomplete="off"
+                >Цель, ₽ <input type="text" id="goalInput" inputmode="decimal" autocomplete="off"
               /></label>
               <label class="field"
-                >Уже отложено, ₽ <input id="startInput" inputmode="decimal" autocomplete="off"
+                >Уже отложено, ₽ <input type="text" id="startInput" inputmode="decimal" autocomplete="off"
               /></label>
             </div>
             <div class="grid">
@@ -469,11 +488,11 @@
 
     <dialog class="dialog" id="dialog" aria-labelledby="dialogTitle">
       <form method="dialog">
-        <h3 id="dialogTitle"></h3>
+        <h3 id="dialogTitle">Подтверждение</h3>
         <p id="dialogText"></p>
         <div class="form-actions">
-          <button class="btn primary" value="ok" id="dialogOk">OK</button>
-          <button class="btn" value="cancel" id="dialogCancel">Отмена</button>
+          <button class="btn primary" type="submit" value="ok" id="dialogOk">OK</button>
+          <button class="btn" type="submit" value="cancel" id="dialogCancel">Отмена</button>
         </div>
       </form>
     </dialog>

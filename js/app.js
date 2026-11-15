@@ -1,9 +1,9 @@
 import * as core from './core.js';
 import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
-import { countUp, haptic, leave, reducedMotion, replay } from './motion.js';
+import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.2.0';
+const APP_VERSION = '6.2.1';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 const THEME_COLORS = { light: '#f1eee8', dark: '#141413' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
@@ -315,7 +315,7 @@ function renderHome() {
   ui.shownTotal = s.total;
   $('goalText').textContent = `из ${core.formatRub(g)} к ${core.formatDate(state.settings.deadline)}`;
   const road = $('progress');
-  if (s.pct > ui.shownPct + 0.05) replay(road, 'driving', 900);
+  if (s.pct > ui.shownPct + 0.05) replay(road, 'driving', MOTION.drive);
   ui.shownPct = s.pct;
   // Двойной кадр — чтобы при первом показе мотоцикл выехал со старта, а не появился на месте.
   requestAnimationFrame(() =>
@@ -389,7 +389,7 @@ function renderHome() {
   );
   renderBanners();
   ui.flashId = null;
-  if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), 900);
+  if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), MOTION.markToast);
 }
 
 function renderChart(t, { animate = false } = {}) {
@@ -406,7 +406,7 @@ function renderChart(t, { animate = false } = {}) {
   chart.replaceChildren(
     ...days.map((d) => {
       const fill = h('span', { className: 'bar-fill ' + (d.value < 0 ? 'neg' : 'pos') });
-      fill.style.animationDelay = `${days.indexOf(d) * 45}ms`;
+      fill.style.animationDelay = `${days.indexOf(d) * MOTION.stagger}ms`;
       const share = (Math.abs(d.value) / range) * 100;
       if (d.value > 0) {
         fill.style.bottom = `${100 - zero}%`;

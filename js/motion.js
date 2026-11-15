@@ -4,11 +4,20 @@ const media = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-mo
 
 export const reducedMotion = () => Boolean(media?.matches);
 
+/** Длительности анимаций в мс. Держи в соответствии с переменными --t-* в styles.css. */
+export const MOTION = {
+  count: 1500, // досчитывание суммы
+  drive: 1800, // «езда» мотоцикла (≈ --t-move)
+  leave: 450, // уход удалённой записи (= --t-ui)
+  stagger: 110, // задержка между столбцами графика
+  markToast: 1900, // тост о новой отметке после её появления
+};
+
 const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 const running = new WeakMap();
 
 /** Плавно меняет число в элементе от from до to. */
-export function countUp(el, from, to, format, duration = 700) {
+export function countUp(el, from, to, format, duration = MOTION.count) {
   cancelAnimationFrame(running.get(el));
   if (reducedMotion() || from === to || !Number.isFinite(from)) {
     el.textContent = format(to);
@@ -34,7 +43,7 @@ export function replay(el, cls, ms) {
 }
 
 /** Анимирует уход элемента, затем вызывает done. Без анимации — сразу. */
-export function leave(el, done, ms = 220) {
+export function leave(el, done, ms = MOTION.leave) {
   if (!el || reducedMotion()) return done();
   el.classList.add('leaving');
   setTimeout(done, ms);

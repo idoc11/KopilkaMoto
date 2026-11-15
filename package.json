@@ -1,6 +1,6 @@
 {
   "name": "kopilkamoto",
-  "version": "6.2.0",
+  "version": "6.2.1",
   "private": true,
   "description": "PWA-трекер накоплений на мотоцикл",
   "type": "module",
@@ -11,7 +11,7 @@
     "start": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "icons": "node scripts/icons.mjs",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && html-validate index.html",
     "format": "prettier --write .",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test \"tests/unit/*.test.mjs\"",
@@ -22,6 +22,7 @@
     "@eslint/js": "10.0.1",
     "eslint": "10.15.0",
     "globals": "17.14.0",
+    "html-validate": "11.21.1",
     "playwright": "1.63.0",
     "prettier": "3.10.1"
   }
