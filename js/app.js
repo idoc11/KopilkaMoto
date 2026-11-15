@@ -133,23 +133,43 @@ async function requestPersistentStorage() {
 // ---------- Уведомления и диалоги ----------
 
 let toastTimer = 0;
+let toastHasAction = false;
+let queuedToast = null;
+
+function hideToast() {
+  $('toast').hidden = true;
+  toastHasAction = false;
+  clearTimeout(toastTimer);
+  // Отложенное сообщение показываем, когда ушёл тост с кнопкой.
+  if (queuedToast) {
+    const next = queuedToast;
+    queuedToast = null;
+    setTimeout(() => toast(...next), 300);
+  }
+}
+
 function toast(text, { action, onAction, duration = 2800 } = {}) {
   const el = $('toast');
+  // Информационный тост не должен вытеснять тост с действием («Отменить»): ставим его в очередь.
+  if (!action && toastHasAction && !el.hidden) {
+    queuedToast = [text, { duration }];
+    return;
+  }
   const btn = $('toastAction');
   $('toastText').textContent = text;
   btn.hidden = !action;
   btn.textContent = action || '';
   btn.onclick = action
     ? () => {
-        el.hidden = true;
-        clearTimeout(toastTimer);
+        hideToast();
         onAction();
       }
     : null;
   el.hidden = false;
+  toastHasAction = Boolean(action);
   announce(action ? `${text}. Кнопка «${action}» доступна несколько секунд.` : text);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.hidden = true), action ? Math.max(duration, 6000) : duration);
+  toastTimer = setTimeout(hideToast, action ? Math.max(duration, 6000) : duration);
 }
 
 function announce(text) {
