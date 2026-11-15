@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.3.0';
+const APP_VERSION = '6.4.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -351,6 +351,10 @@ function renderHome() {
     }),
   );
   road.classList.toggle('finished', s.phase === 'done');
+  const bike = $('dreamBike');
+  bike.style.setProperty('--gray', String(1 - s.pct / 100));
+  bike.parentElement.classList.toggle('done', s.phase === 'done');
+  bike.alt = `Мотоцикл мечты: цвет проявляется по мере накопления, сейчас ${Math.floor(s.pct)}%`;
   const pctText = s.pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
   $('pct').textContent = pctText;
   const progress = $('progress');

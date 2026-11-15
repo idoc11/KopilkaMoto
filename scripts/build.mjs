@@ -12,6 +12,7 @@ const FILES = [
   'js',
   'icons',
   'fonts',
+  'images',
 ];
 
 let build = process.argv[2] || process.env.GITHUB_SHA || '';

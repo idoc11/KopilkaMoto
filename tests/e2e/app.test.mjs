@@ -423,3 +423,23 @@ test('часы в формате 7:30: сохраняются как 7,5, пок
   assert.match(await page.textContent('#formError'), /7:30/);
   await ctx.close();
 });
+
+test('мотоцикл мечты на главной: серый в начале, цветной при наборе суммы, доступен офлайн', async () => {
+  const ctx = await env.context();
+  const gray = async (page) =>
+    Number(
+      await page.evaluate(() =>
+        getComputedStyle(document.getElementById('dreamBike')).getPropertyValue('--gray'),
+      ),
+    );
+  const empty = await open(ctx, env.base, { storage: configured() });
+  assert.equal(await empty.evaluate(() => document.getElementById('dreamBike').naturalWidth), 800);
+  assert.equal(await gray(empty), 1);
+  const half = await open(ctx, env.base, { storage: configured({ a: entry(today(), 300000) }) });
+  assert.equal(await gray(half), 0.5);
+  assert.match(await half.getAttribute('#dreamBike', 'alt'), /50%/);
+  const done = await open(ctx, env.base, { storage: configured({ a: entry(today(), 600000) }) });
+  assert.equal(await gray(done), 0);
+  assert.equal(await done.evaluate(() => document.querySelector('.dream').classList.contains('done')), true);
+  await ctx.close();
+});
