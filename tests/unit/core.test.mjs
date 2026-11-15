@@ -323,3 +323,17 @@ test('замок: задержка покупки и подсчёт расход
   assert.deepEqual(w, { count: 1, sum: 200 });
   assert.deepEqual(core.withdrawals({ a: e(T, 1, 'spent') }, 0), { count: 0, sum: 0 });
 });
+
+test('прогноз: долгий простой — отдельное сообщение, а не «расходы съели доходы»', () => {
+  const idle = st({ a: e('2026-09-01', 5000) }, { goal: 100000 });
+  const f = core.forecast(idle, T);
+  assert.equal(f.status, 'stale');
+  assert.match(core.forecastText(f), /записей не было/);
+  assert.doesNotMatch(core.forecastText(f), /расходы/);
+  // настоящий перевес расходов по-прежнему распознаётся
+  const losing = core.forecast(st({ a: e(T, 100), b: e(T, 500, 'spent') }), T);
+  assert.equal(losing.status, 'no-progress');
+  assert.match(core.forecastText(losing), /расходы/);
+  // при простое замок не обещает сдвиг покупки
+  assert.equal(core.delayDays(idle, 1000, T), null);
+});

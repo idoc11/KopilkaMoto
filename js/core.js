@@ -537,22 +537,30 @@ export const FORECAST_MIN_DAYS = 7;
  * Темп накопления: чистый результат за последние 30 дней (или с начала записей, но не меньше 7 дней),
  * делённый на число дней. Возвращает рубли в день или null, если данных мало.
  */
-export function savingPace(entries, today) {
+function paceWindow(entries, today) {
   const list = Object.values(entries).filter((e) => e.date <= today);
   if (!list.length) return null;
   const first = list.reduce((m, e) => (e.date < m ? e.date : m), today);
   const span = Math.min(FORECAST_WINDOW_DAYS, Math.max(FORECAST_MIN_DAYS, daysBetween(first, today) + 1));
   const from = addDays(today, -(span - 1));
-  const net = list.filter((e) => e.date >= from).reduce((s, e) => s + signedAmount(e), 0);
-  return net / span;
+  const recent = list.filter((e) => e.date >= from);
+  const net = recent.reduce((s, e) => s + signedAmount(e), 0);
+  return { pace: net / span, span, count: recent.length };
+}
+
+export function savingPace(entries, today) {
+  return paceWindow(entries, today)?.pace ?? null;
 }
 
 /** Прогноз даты, когда при текущем темпе наберётся цель. */
 export function forecast(state, today) {
   const left = state.settings.goal - balance(state);
   if (left <= 0) return { status: 'done' };
-  const pace = savingPace(state.entries, today);
-  if (pace === null) return { status: 'no-data' };
+  const win = paceWindow(state.entries, today);
+  if (win === null) return { status: 'no-data' };
+  // Ни одной записи в окне — это простой, а не перевес расходов.
+  if (!win.count) return { status: 'stale', span: win.span };
+  const { pace } = win;
   if (pace <= 0) return { status: 'no-progress', pace };
   const days = Math.ceil(left / pace);
   if (days > 365 * 20) return { status: 'too-far', pace };
@@ -566,6 +574,8 @@ export function forecastText(f) {
       return 'Сумма уже набрана.';
     case 'no-data':
       return 'Прогноз появится после первых записей.';
+    case 'stale':
+      return `За последние ${f.span} дней записей не было — прогноз появится после новых доходов.`;
     case 'no-progress':
       return 'За последние дни расходы съели доходы — при таком темпе цель не приближается.';
     case 'too-far':
