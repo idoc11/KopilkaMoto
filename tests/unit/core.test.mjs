@@ -159,8 +159,9 @@ test('monthSummary и серия доходов', () => {
 
 test('achievements: следующее достижение', () => {
   const a = core.achievements(st({ a: e(T, 10000) }), T);
-  assert.equal(a.items.find((i) => i.title === '10% цели').done, true);
-  assert.equal(a.next.title, 'Четверть пути');
+  assert.equal(a.items.find((i) => i.title === '10%').done, true);
+  assert.equal(a.next.title, 'Четверть');
+  assert.equal(a.next.hint, 'не хватает 15\u00a0000\u00a0₽');
 });
 
 test('P2-20: поиск «доход» находит и доставки', () => {
@@ -280,5 +281,8 @@ test('форматирование денег', () => {
   assert.equal(core.formatRub(0.1 + 0.2), '0,3\u00a0₽');
   assert.equal(core.formatSigned(-20), '−20\u00a0₽');
   assert.equal(core.parseAmount(core.formatNumber(1234567.5)), 1234567.5);
-  assert.equal(core.formatCompact(1500), '+1,5\u00a0тыс.');
+  assert.equal(core.formatCompact(1500), '1,5к');
+  assert.equal(core.formatCompact(-800), '−800');
+  assert.equal(core.formatCompact(25400), '25к');
+  assert.equal(core.formatCompact(1250000), '1,3М');
 });

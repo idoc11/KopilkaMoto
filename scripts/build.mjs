@@ -4,7 +4,15 @@ import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 
 const OUT = '_site';
-const FILES = ['index.html', 'styles.css', 'manifest.webmanifest', 'service-worker.js', 'js', 'icons'];
+const FILES = [
+  'index.html',
+  'styles.css',
+  'manifest.webmanifest',
+  'service-worker.js',
+  'js',
+  'icons',
+  'fonts',
+];
 
 let build = process.argv[2] || process.env.GITHUB_SHA || '';
 if (!build) {

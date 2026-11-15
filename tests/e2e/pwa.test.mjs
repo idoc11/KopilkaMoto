@@ -35,7 +35,7 @@ test('P1-8: офлайн-запуск и обновление по кнопке'
   await Promise.all([page.waitForEvent('load'), page.click('#updateBtn')]);
   await page.waitForSelector('html[data-ready]');
   const cacheNames = await page.evaluate(() => caches.keys());
-  assert.deepEqual(cacheNames, ['kopilkamoto-v8-next']);
+  assert.deepEqual(cacheNames, [`kopilkamoto-${sw.match(/VERSION = '([^']+)'/)[1]}-next`]);
   env.overrides.clear();
   assert.deepEqual(page.errors, []);
   await ctx.close();
