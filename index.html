@@ -13,8 +13,8 @@
       content="KopilkaMoto — трекер накоплений на мотоцикл. Работает офлайн, данные хранятся на устройстве."
     />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f1eee8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="KopilkaMoto" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -184,6 +184,8 @@
             </div>
           </dl>
           <p class="status neutral" id="status">Записей пока нет.</p>
+          <p class="forecast" id="forecast"></p>
+          <p class="lock-info" id="lockInfo" hidden></p>
 
           <div class="actions">
             <button class="btn primary big" type="button" data-add="delivery">
@@ -367,6 +369,19 @@
             <p class="field-error" id="settingsError" role="alert" hidden></p>
             <button class="btn primary wide" type="submit">Сохранить цель и сроки</button>
           </form>
+
+          <div class="card spaced">
+            <h3>Замок до цели</h3>
+            <label class="switch">
+              <input id="lockToggle" type="checkbox" role="switch" />
+              <span>Спрашивать перед каждым расходом из копилки</span>
+            </label>
+            <p class="hint">
+              Перед записью расхода покажу, на сколько дней он отодвинет покупку, и дам три секунды
+              передумать. Сами деньги приложение не блокирует — для этого подойдёт вклад без снятия до даты
+              цели.
+            </p>
+          </div>
 
           <div class="card spaced">
             <h3>Оформление</h3>
