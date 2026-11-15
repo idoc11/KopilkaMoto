@@ -320,3 +320,40 @@ test('история с тысячами записей: рисуется пор
   assert.doesNotMatch(await page.textContent('#list'), /false/);
   await ctx.close();
 });
+
+test('приложение открыто через полночь: в новой записи сегодняшняя дата, а не вчерашняя', async () => {
+  const ctx = await env.context();
+  const page = await ctx.newPage();
+  await page.clock.install({ time: new Date(2026, 10, 20, 23, 58) });
+  await page.addInitScript((d) => {
+    if (!localStorage.getItem('moto-tracker-v1')) localStorage.setItem('moto-tracker-v1', JSON.stringify(d));
+  }, configured()['moto-tracker-v1']);
+  await page.goto(env.base + '#add');
+  await page.waitForSelector('html[data-ready]');
+  assert.equal(await page.inputValue('#date'), '2026-11-20');
+  await page.click('[data-nav=home]');
+  await page.clock.runFor(5 * 60_000); // 00:03 следующего дня
+  await page.click('[data-nav=add]');
+  assert.equal(await page.inputValue('#date'), '2026-11-21');
+  assert.equal(await page.getAttribute('#date', 'max'), '2026-11-21');
+  // черновик (сумма, тип, комментарий, выбранная вручную дата) переживает переход в другой раздел
+  await page.click('#kinds [data-kind=other]');
+  await page.fill('#amount', '1234');
+  await page.fill('#note', 'Чаевые');
+  await page.fill('#date', '2026-11-18');
+  await page.click('[data-nav=history]');
+  await page.clock.runFor(24 * 3600_000);
+  await page.click('[data-nav=add]');
+  assert.deepEqual(
+    [await page.inputValue('#amount'), await page.inputValue('#note'), await page.inputValue('#date')],
+    ['1234', 'Чаевые', '2026-11-18'],
+  );
+  assert.equal(await page.getAttribute('#kinds [data-kind=other]', 'aria-pressed'), 'true');
+  assert.equal(await page.getAttribute('#date', 'max'), '2026-11-22');
+  // кнопка «Доход» на главной начинает новую запись
+  await page.click('[data-nav=home]');
+  await page.click('[data-add=delivery]');
+  assert.equal(await page.inputValue('#amount'), '');
+  assert.equal(await page.inputValue('#date'), '2026-11-22');
+  await ctx.close();
+});

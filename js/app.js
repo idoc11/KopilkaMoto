@@ -679,14 +679,20 @@ function formError(fieldId, text) {
 
 function prepareForm() {
   const t = today();
-  $('date').max = t;
-  if (!ui.editingId && !$('date').value) $('date').value = t;
+  const date = $('date');
+  date.max = t;
+  // Автоматическую дату обновляем (приложение могло быть открыто с вечера), выбранную вручную — не трогаем.
+  if (!ui.editingId && (!date.value || date.value === ui.autoDate)) {
+    date.value = t;
+    ui.autoDate = t;
+  }
 }
 
 function resetForm(kind = 'delivery') {
   ui.editingId = null;
   $('entryForm').reset();
   $('date').value = today();
+  ui.autoDate = today();
   $('date').max = today();
   $('h-add').textContent = 'Новая запись';
   $('saveEntry').textContent = 'Сохранить';
@@ -1254,7 +1260,6 @@ function bind() {
     const page = a?.getAttribute('href').slice(1);
     if (!a || !PAGES.includes(page) || e.defaultPrevented || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
-    if (page === 'add' && !ui.editingId && ui.page !== 'add') resetForm();
     go(page);
   });
   const syncFromUrl = () => {
@@ -1274,6 +1279,7 @@ function init() {
   bind();
   setKind('delivery');
   $('date').value = today();
+  ui.autoDate = today();
   applyTheme();
   setupSync();
   setupInstall();
