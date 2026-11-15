@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https:; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>KopilkaMoto</title>
     <meta
@@ -22,19 +22,50 @@
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
     <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link
+      rel="preload"
+      href="./fonts/russo-one-cyrillic-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./js/app.js"></script>
   </head>
   <body>
+    <svg class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-home" viewBox="0 0 24 24">
+        <path d="M3 11.5 12 4l9 7.5M5.5 9.5V20h13V9.5M10 20v-5.5h4V20" />
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24">
+        <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+      </symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" /></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"
+        />
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" /></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" /></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" /></symbol>
+      <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 4h12l-3 4 3 4H6" /></symbol>
+      <symbol id="i-moto" viewBox="0 0 32 24">
+        <circle cx="7" cy="17" r="4.5" />
+        <circle cx="25" cy="17" r="4.5" />
+        <path d="M7 17l5-7h7l6 7M12 10l4 7h5M19 10l-2-4h4M10 10h4" />
+      </symbol>
+    </svg>
     <noscript><p class="noscript">Для работы KopilkaMoto нужно включить JavaScript.</p></noscript>
     <div class="app">
       <header class="top">
         <div class="brand">
-          <img class="logo" src="./icons/icon.svg" alt="" width="42" height="42" />
-          <div>
-            <h1>KopilkaMoto</h1>
-            <p class="tagline">Твоя мечта ближе каждый день</p>
-          </div>
+          <img class="logo" src="./icons/icon.svg" alt="" width="36" height="36" />
+          <h1>KopilkaMoto</h1>
         </div>
         <button
           class="icon-btn theme-btn"
@@ -97,8 +128,8 @@
           <h2 id="h-home" class="visually-hidden" tabindex="-1">Главная</h2>
 
           <form class="card onboarding" id="onboarding" hidden novalidate>
-            <h3>Давай настроим цель</h3>
-            <p class="hint">Это займёт полминуты. Всё можно изменить позже в настройках.</p>
+            <h3>На что копим</h3>
+            <p class="hint">Потом всё можно поменять в настройках.</p>
             <label class="field"
               >Сколько стоит мотоцикл, ₽
               <input id="obGoal" inputmode="decimal" autocomplete="off" placeholder="600 000" required />
@@ -108,22 +139,22 @@
               <input id="obStart" inputmode="decimal" autocomplete="off" placeholder="0" />
             </label>
             <label class="field"
-              >Когда хочешь купить
+              >Когда покупаешь
               <input id="obDeadline" type="date" required />
             </label>
             <p class="field-error" id="obError" role="alert" hidden></p>
             <div class="form-actions">
-              <button class="btn primary" type="submit">Начать копить</button>
-              <button class="btn ghost" id="obSkip" type="button">Пропустить</button>
+              <button class="btn primary" type="submit">Сохранить</button>
+              <button class="btn ghost" id="obSkip" type="button">Позже</button>
             </div>
           </form>
 
-          <div class="hero">
-            <p class="hero-label">Мои накопления</p>
+          <div class="dash">
+            <p class="dash-label">Накоплено</p>
             <p class="total" id="total">0 ₽</p>
             <p class="goal" id="goalText"></p>
             <div
-              class="progress"
+              class="road"
               id="progress"
               role="progressbar"
               aria-label="Прогресс к цели"
@@ -131,39 +162,40 @@
               aria-valuemax="100"
               aria-valuenow="0"
             >
-              <span id="fill"></span>
+              <span class="road-done" id="fill"></span>
+              <svg class="road-bike" aria-hidden="true"><use href="#i-moto" /></svg>
+              <svg class="road-flag" aria-hidden="true"><use href="#i-flag" /></svg>
             </div>
             <div class="meta"><span id="pct">0%</span><span id="left"></span></div>
           </div>
 
-          <dl class="stats">
-            <div class="stat">
+          <dl class="readout">
+            <div>
               <dt>Нужно в день</dt>
               <dd id="perDay">—</dd>
             </div>
-            <div class="stat">
-              <dt>Доход/час</dt>
+            <div>
+              <dt>Доход в час</dt>
               <dd id="perHour">—</dd>
             </div>
-            <div class="stat">
-              <dt>До цели</dt>
+            <div>
+              <dt>До срока</dt>
               <dd id="daysLeft">—</dd>
             </div>
           </dl>
-          <p class="status neutral" id="status">Добавь первую запись.</p>
+          <p class="status neutral" id="status">Записей пока нет.</p>
 
-          <h3 class="head">Быстрое действие</h3>
           <div class="actions">
-            <button class="action primary" type="button" data-add="delivery">
-              ＋ Добавить доход<small>Доставка или подработка</small>
+            <button class="btn primary big" type="button" data-add="delivery">
+              <svg class="i" aria-hidden="true"><use href="#i-plus" /></svg>Доход
             </button>
-            <button class="action" type="button" data-add="spent">
-              − Записать расход<small>Учесть трату из копилки</small>
+            <button class="btn big" type="button" data-add="spent">
+              <svg class="i" aria-hidden="true"><use href="#i-minus" /></svg>Расход
             </button>
           </div>
 
           <div class="head">
-            <h3>Чистые накопления за 7 дней</h3>
+            <h3>Неделя</h3>
             <span id="weekTotal" class="hint"></span>
           </div>
           <div class="card">
@@ -171,41 +203,39 @@
             <p class="hint chart-detail" id="chartDetail" aria-live="polite"></p>
           </div>
 
-          <h3 class="head">Этот месяц</h3>
-          <dl class="stats">
-            <div class="stat">
-              <dt>Доходы</dt>
+          <h3 class="head" id="monthTitle">Этот месяц</h3>
+          <dl class="readout">
+            <div>
+              <dt>Пришло</dt>
               <dd class="pos" id="monthIncome">0 ₽</dd>
             </div>
-            <div class="stat">
-              <dt>Расходы</dt>
+            <div>
+              <dt>Ушло</dt>
               <dd class="neg" id="monthSpent">0 ₽</dd>
             </div>
-            <div class="stat">
-              <dt>Чистый итог</dt>
+            <div>
+              <dt>Итого</dt>
               <dd id="monthNet">0 ₽</dd>
             </div>
           </dl>
 
           <div class="head">
-            <h3>Мои достижения</h3>
+            <h3>Отметки</h3>
             <span class="hint" id="streakLabel"></span>
           </div>
-          <div class="card">
-            <ul class="badges" id="achievements"></ul>
-            <p class="hint" id="nextAchievement"></p>
-          </div>
+          <ul class="marks" id="achievements"></ul>
+          <p class="hint next-mark" id="nextAchievement"></p>
 
           <div class="head">
-            <h3>Последние операции</h3>
-            <a class="btn small" href="#history">Вся история</a>
+            <h3>Последние записи</h3>
+            <a class="link" href="#history">Все</a>
           </div>
           <div class="card"><ul class="entries" id="recent"></ul></div>
         </section>
 
         <!-- ДОБАВЛЕНИЕ -->
         <section class="page" id="page-add" aria-labelledby="h-add" hidden>
-          <h2 class="head page-title" id="h-add" tabindex="-1">Новая операция</h2>
+          <h2 class="head page-title" id="h-add" tabindex="-1">Новая запись</h2>
           <form class="card" id="entryForm" novalidate>
             <div class="seg" id="kinds" role="group" aria-label="Тип операции">
               <button type="button" data-kind="delivery" aria-pressed="true">Доставка</button>
@@ -219,7 +249,7 @@
                 inputmode="decimal"
                 autocomplete="off"
                 enterkeyhint="done"
-                placeholder="Например, 5000"
+                placeholder="0"
                 required
               />
             </label>
@@ -238,11 +268,11 @@
             </div>
             <label class="field"
               >Комментарий
-              <input id="note" maxlength="100" autocomplete="off" placeholder="Смена, бонус, ремонт..." />
+              <input id="note" maxlength="100" autocomplete="off" placeholder="Смена, чаевые, бензин" />
             </label>
             <p class="field-error" id="formError" role="alert" hidden></p>
             <div class="form-actions">
-              <button class="btn primary" id="saveEntry" type="submit">Сохранить операцию</button>
+              <button class="btn primary" id="saveEntry" type="submit">Сохранить</button>
               <button class="btn" id="cancelEntry" type="button" hidden>Отмена</button>
             </div>
           </form>
@@ -251,13 +281,13 @@
         <!-- ИСТОРИЯ -->
         <section class="page" id="page-history" aria-labelledby="h-history" hidden>
           <div class="head">
-            <h2 id="h-history" tabindex="-1">История операций</h2>
+            <h2 id="h-history" tabindex="-1">История</h2>
             <span id="count" class="hint"></span>
           </div>
           <div class="card">
             <label class="field"
               >Поиск
-              <input id="historySearch" type="search" placeholder="Например, смена или ремонт" />
+              <input id="historySearch" type="search" placeholder="Комментарий или тип" />
             </label>
             <div class="grid">
               <label class="field"
@@ -278,7 +308,7 @@
                 </select>
               </label>
             </div>
-            <button class="btn wide" id="csvExport" type="button">Скачать историю в CSV</button>
+            <button class="btn wide" id="csvExport" type="button">Выгрузить в CSV</button>
           </div>
           <div class="card spaced" id="historySummary"></div>
           <div class="card spaced"><ul class="entries" id="list"></ul></div>
@@ -287,8 +317,8 @@
         <!-- AI -->
         <section class="page" id="page-ai" aria-labelledby="h-ai" hidden>
           <div class="head">
-            <h2 id="h-ai" tabindex="-1">AI-помощник</h2>
-            <button class="btn small ghost" id="clearChat" type="button">Очистить чат</button>
+            <h2 id="h-ai" tabindex="-1">Помощник</h2>
+            <button class="btn small ghost" id="clearChat" type="button">Очистить</button>
           </div>
           <div class="card">
             <div
@@ -304,15 +334,15 @@
                 id="question"
                 rows="2"
                 maxlength="1000"
-                placeholder="Как быстрее накопить?"
+                placeholder="Сколько смен осталось до цели?"
               ></textarea>
               <button class="btn primary send" id="send" type="submit" aria-label="Отправить вопрос">
-                ➤
+                <svg class="i" aria-hidden="true"><use href="#i-send" /></svg>
               </button>
             </form>
             <p class="hint">
-              При отправке вопроса помощнику передаются цель, сроки, баланс и до 80 последних операций с
-              комментариями. Не записывай в комментарии пароли, номера карт и другие секреты.
+              Вместе с вопросом уходят цель, сроки, баланс и последние 80 записей с комментариями. Паролей и
+              номеров карт в комментариях быть не должно.
             </p>
           </div>
         </section>
@@ -351,7 +381,7 @@
           </div>
 
           <form class="card spaced" id="apiForm" novalidate>
-            <h3>AI-помощник</h3>
+            <h3>Помощник</h3>
             <label class="field"
               >URL прокси (Cloudflare Worker)
               <input
@@ -364,7 +394,7 @@
             </label>
             <button class="btn primary wide" type="submit">Сохранить адрес</button>
             <p class="hint">
-              Секретный ключ OpenAI сюда не вставляй — он хранится только в Worker. Нужен только URL.
+              Только адрес Worker. Ключ OpenAI хранится в самом Worker, сюда его не вставляй.
             </p>
           </form>
 
@@ -398,11 +428,21 @@
 
     <nav class="nav" aria-label="Разделы">
       <div class="navin">
-        <a href="#home" data-nav="home"><span aria-hidden="true">⌂</span>Главная</a>
-        <a href="#add" data-nav="add"><span aria-hidden="true">＋</span>Добавить</a>
-        <a href="#history" data-nav="history"><span aria-hidden="true">▤</span>История</a>
-        <a href="#ai" data-nav="ai"><span aria-hidden="true">✦</span>AI</a>
-        <a href="#settings" data-nav="settings"><span aria-hidden="true">⚙</span>Настройки</a>
+        <a href="#home" data-nav="home"
+          ><svg class="i" aria-hidden="true"><use href="#i-home" /></svg>Главная</a
+        >
+        <a href="#add" data-nav="add"
+          ><svg class="i" aria-hidden="true"><use href="#i-plus" /></svg>Запись</a
+        >
+        <a href="#history" data-nav="history"
+          ><svg class="i" aria-hidden="true"><use href="#i-list" /></svg>История</a
+        >
+        <a href="#ai" data-nav="ai"
+          ><svg class="i" aria-hidden="true"><use href="#i-chat" /></svg>Помощник</a
+        >
+        <a href="#settings" data-nav="settings"
+          ><svg class="i" aria-hidden="true"><use href="#i-gear" /></svg>Настройки</a
+        >
       </div>
     </nav>
 

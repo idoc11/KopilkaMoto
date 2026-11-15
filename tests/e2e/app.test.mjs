@@ -128,7 +128,7 @@ test('редактирование, удаление с отменой, удал
     storage: configured({ a: entry(today(), 1000, 'delivery', { note: 'Смена' }) }),
   });
   await page.click('#recent [aria-label^="Изменить: Смена"]');
-  assert.equal(await page.textContent('#h-add'), 'Изменить операцию');
+  assert.equal(await page.textContent('#h-add'), 'Правка записи');
   assert.equal(await page.inputValue('#amount'), '1000');
   await page.fill('#amount', '1200');
   await page.click('#saveEntry');
@@ -141,7 +141,7 @@ test('редактирование, удаление с отменой, удал
 
   await page.click('#recent [aria-label^="Изменить: Смена"]');
   await page.click('nav [data-nav=history]');
-  assert.equal(await page.textContent('#h-add'), 'Новая операция'); // уход со страницы сбрасывает редактирование
+  assert.equal(await page.textContent('#h-add'), 'Новая запись'); // уход со страницы сбрасывает редактирование
   await ctx.close();
 });
 

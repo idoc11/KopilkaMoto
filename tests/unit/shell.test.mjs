@@ -7,6 +7,8 @@ test('service worker кеширует все файлы приложения и 
   const shell = [...sw.match(/const SHELL = \[([\s\S]*?)\];/)[1].matchAll(/'\.\/([^']*)'/g)].map((m) => m[1]);
   for (const f of shell.filter(Boolean)) await access(f);
   for (const f of await readdir('js')) assert.ok(shell.includes('js/' + f), `js/${f} нет в SHELL`);
+  for (const f of (await readdir('fonts')).filter((x) => x.endsWith('.woff2')))
+    assert.ok(shell.includes('fonts/' + f), `fonts/${f} нет в SHELL`);
   for (const f of await readdir('icons')) assert.ok(shell.includes('icons/' + f), `icons/${f} нет в SHELL`);
   assert.ok(shell.includes('styles.css') && shell.includes('index.html'));
 });
@@ -23,4 +25,13 @@ test('версия приложения совпадает в package.json и ap
   const pkg = JSON.parse(await readFile('package.json', 'utf8'));
   const app = await readFile('js/app.js', 'utf8');
   assert.match(app, new RegExp(`APP_VERSION = '${pkg.version.replace(/\./g, '\\.')}'`));
+});
+
+test('в интерфейсе нет эмодзи и декоративных юникод-значков — только SVG', async () => {
+  const files = ['index.html', 'js/app.js', 'js/core.js'];
+  for (const f of files) {
+    const text = await readFile(f, 'utf8');
+    const found = text.match(/[\p{Extended_Pictographic}\u2600-\u27BF\u2B00-\u2BFF\uFF0B]/gu);
+    assert.equal(found, null, `${f}: ${found?.join(' ')}`);
+  }
 });

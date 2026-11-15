@@ -11,7 +11,7 @@ const GLYPH = `
 const svg = ({ rounded, scale }) => {
   const t = 64 - 64 * scale;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" ${rounded ? 'rx="28"' : ''} fill="#c23523"/>
+  <rect width="128" height="128" ${rounded ? 'rx="28"' : ''} fill="#ad3a0b"/>
   <g transform="translate(${t} ${t}) scale(${scale})">${GLYPH}</g>
 </svg>
 `;

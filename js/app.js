@@ -2,7 +2,7 @@ import * as core from './core.js';
 import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 
-const APP_VERSION = '6.0.0';
+const APP_VERSION = '6.1.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 const THEME_COLORS = { light: '#f3f4f6', dark: '#101216' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
@@ -23,6 +23,19 @@ function h(tag, props = {}, ...children) {
   }
   el.append(...children.flat().filter((c) => c !== null && c !== undefined && c !== false));
   return el;
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/** SVG-значок из спрайта в index.html. */
+function icon(name) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', 'i');
+  svg.setAttribute('aria-hidden', 'true');
+  const use = document.createElementNS(SVG_NS, 'use');
+  use.setAttribute('href', '#i-' + name);
+  svg.append(use);
+  return svg;
 }
 
 // ---------- Хранилище ----------
@@ -234,20 +247,26 @@ function entryItem(id, e) {
     h(
       'div',
       { className: 'entry-actions' },
-      h('button', {
-        className: 'icon-btn',
-        type: 'button',
-        text: '✎',
-        'aria-label': `Изменить: ${label}`,
-        onClick: () => editEntry(id),
-      }),
-      h('button', {
-        className: 'icon-btn',
-        type: 'button',
-        text: '×',
-        'aria-label': `Удалить: ${label}`,
-        onClick: () => deleteEntry(id),
-      }),
+      h(
+        'button',
+        {
+          className: 'icon-btn',
+          type: 'button',
+          'aria-label': `Изменить: ${label}`,
+          onClick: () => editEntry(id),
+        },
+        icon('edit'),
+      ),
+      h(
+        'button',
+        {
+          className: 'icon-btn',
+          type: 'button',
+          'aria-label': `Удалить: ${label}`,
+          onClick: () => deleteEntry(id),
+        },
+        icon('trash'),
+      ),
     ),
   );
 }
@@ -258,14 +277,15 @@ function renderHome() {
   const g = state.settings.goal;
   $('onboarding').hidden = !ui.showOnboarding;
   $('total').textContent = core.formatRub(s.total);
-  $('goalText').textContent = 'из ' + core.formatRub(g);
+  $('goalText').textContent = `из ${core.formatRub(g)} к ${core.formatDate(state.settings.deadline)}`;
   $('fill').style.width = s.pct + '%';
+  $('progress').style.setProperty('--p', s.pct + '%');
   const pctText = s.pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
   $('pct').textContent = pctText;
   const progress = $('progress');
   progress.setAttribute('aria-valuenow', String(Math.round(s.pct)));
   progress.setAttribute('aria-valuetext', `${pctText}: ${core.formatRub(s.total)} из ${core.formatRub(g)}`);
-  $('left').textContent = s.left ? 'Осталось ' + core.formatRub(s.left) : 'Цель достигнута';
+  $('left').textContent = s.left ? 'ещё ' + core.formatRub(s.left) : 'набрано';
   $('perDay').textContent =
     s.perDay === null ? '—' : s.perDay === 0 ? '0 ₽' : core.formatRub(Math.ceil(s.perDay));
   $('perHour').textContent = s.perHour === null ? '—' : core.formatRub(Math.round(s.perHour));
@@ -273,7 +293,7 @@ function renderHome() {
   const st = $('status');
   st.className = 'status ' + s.status.tone;
   st.textContent =
-    Object.keys(state.entries).length || s.phase === 'done' ? s.status.text : 'Добавь первую запись.';
+    Object.keys(state.entries).length || s.phase === 'done' ? s.status.text : 'Записей пока нет.';
   if (!Object.keys(state.entries).length && s.phase !== 'done') st.className = 'status neutral';
 
   renderChart(t);
@@ -290,23 +310,21 @@ function renderHome() {
     ...a.items.map((x) =>
       h(
         'li',
-        { className: 'badge ' + (x.done ? 'unlocked' : 'locked') },
-        h('span', { className: 'medal', 'aria-hidden': 'true', text: x.icon }),
-        h('b', { text: x.title }),
-        h('small', { text: x.done ? 'Получено' : x.hint }),
+        { className: 'mark ' + (x.done ? 'unlocked' : 'locked'), title: x.hint },
+        icon('check'),
+        x.title,
+        h('span', { className: 'visually-hidden', text: x.done ? ' — есть' : ' — пока нет' }),
       ),
     ),
   );
-  $('streakLabel').textContent = `Серия: ${a.streak} дн.`;
-  $('nextAchievement').textContent = a.next
-    ? `Следующее достижение: ${a.next.title} — ${a.next.hint}.`
-    : 'Все достижения открыты — отличная работа!';
+  $('streakLabel').textContent = a.streak ? `${a.streak} дн. подряд с доходом` : '';
+  $('nextAchievement').textContent = a.next ? `Дальше: ${a.next.title.toLowerCase()} — ${a.next.hint}.` : '';
 
   const recent = core.sortEntries(state.entries).slice(0, 5);
   $('recent').replaceChildren(
     ...(recent.length
       ? recent.map(([id, e]) => entryItem(id, e))
-      : [h('li', { className: 'empty', text: 'Здесь появятся твои операции.' })]),
+      : [h('li', { className: 'empty', text: 'Пусто. Нажми «Доход», когда закроешь первую смену.' })]),
   );
   renderBanners();
 }
@@ -359,7 +377,7 @@ function renderChart(t) {
   const sel = days.find((d) => d.date === ui.selectedDay);
   $('chartDetail').textContent = sel
     ? `${sel.weekday}, ${core.formatDate(sel.date)}: ${sel.value ? core.formatSigned(sel.value) : 'операций нет'}`
-    : 'Доходы минус расходы за день. Нажми на столбец, чтобы увидеть точную сумму.';
+    : 'Доходы минус расходы по дням. Нажми на столбец, чтобы увидеть сумму.';
 }
 
 function renderHistory() {
@@ -559,8 +577,8 @@ function resetForm(kind = 'delivery') {
   $('entryForm').reset();
   $('date').value = today();
   $('date').max = today();
-  $('h-add').textContent = 'Новая операция';
-  $('saveEntry').textContent = 'Сохранить операцию';
+  $('h-add').textContent = 'Новая запись';
+  $('saveEntry').textContent = 'Сохранить';
   $('cancelEntry').hidden = true;
   clearFormErrors();
   setKind(kind);
@@ -580,7 +598,7 @@ function editEntry(id) {
   $('date').value = e.date;
   $('hours').value = e.hours ? String(e.hours).replace('.', ',') : '';
   $('note').value = e.note;
-  $('h-add').textContent = 'Изменить операцию';
+  $('h-add').textContent = 'Правка записи';
   $('saveEntry').textContent = 'Сохранить изменения';
   $('cancelEntry').hidden = false;
   go('add');
@@ -593,7 +611,7 @@ function submitEntry(ev) {
   const editing = ui.editingId;
   const original = editing ? state.entries[editing] : null;
   if (editing && !original) {
-    toast('Эта операция уже удалена');
+    toast('Эта запись уже удалена');
     resetForm();
     return;
   }
@@ -625,7 +643,7 @@ function submitEntry(ev) {
   };
   if (!commit(next)) return;
   resetForm();
-  toast(editing ? 'Изменения сохранены' : 'Операция сохранена');
+  toast(editing ? 'Изменения сохранены' : 'Записано');
   go('home', { replace: true });
 }
 
@@ -637,7 +655,7 @@ function deleteEntry(id) {
   if (!commit(next)) return;
   if (ui.editingId === id) resetForm();
   renderAll();
-  toast('Операция удалена', {
+  toast('Запись удалена', {
     action: 'Отменить',
     onAction: () => {
       if (state.entries[id]) return;
@@ -645,7 +663,7 @@ function deleteEntry(id) {
       back.entries[id] = removed;
       if (commit(back)) {
         renderAll();
-        toast('Операция восстановлена');
+        toast('Запись возвращена');
       }
     },
   });
@@ -690,7 +708,7 @@ function finishOnboarding(settings) {
   if (!commit(next, { change: false })) return;
   ui.showOnboarding = false;
   renderHome();
-  toast('Цель сохранена. Удачи в накоплениях!');
+  toast('Цель сохранена');
 }
 
 // ---------- Настройки ----------
@@ -756,7 +774,7 @@ function exportBackup() {
   prefs.snoozeUntil = 0;
   savePrefs();
   renderAll();
-  toast('Резервная копия скачана');
+  toast('Копия скачана');
 }
 
 async function importBackup(file) {
@@ -810,7 +828,7 @@ async function importBackup(file) {
 
 function exportCsv() {
   download(`kopilkamoto-history-${today()}.csv`, core.buildCsv(state.entries), 'text/csv;charset=utf-8');
-  toast('CSV-файл подготовлен');
+  toast('CSV скачан');
 }
 
 // ---------- AI ----------
@@ -829,8 +847,8 @@ function renderChat({ pending = false, error = '' } = {}) {
         bubble(
           'ai',
           prefs.apiUrl
-            ? 'Привет! Я помогу проанализировать накопления и составить план. Спроси, например: «Сколько смен нужно до цели?»'
-            : 'Привет! Чтобы я заработал, укажи адрес защищённого прокси в **Настройках → AI-помощник**.',
+            ? 'Спроси про накопления: сколько смен осталось, на чём можно сэкономить, успеваешь ли к сроку.'
+            : 'Чтобы задавать вопросы, укажи адрес прокси в **Настройки → Помощник**.',
         ),
       ];
   if (pending) items.push(h('div', { className: 'bubble typing', text: 'Думаю…', 'aria-busy': 'true' }));
@@ -977,10 +995,10 @@ function setupSync() {
       state = store.load().state;
       if (ui.editingId && !state.entries[ui.editingId]) {
         resetForm();
-        if (ui.page === 'add') toast('Операция удалена в другой вкладке');
+        if (ui.page === 'add') toast('Запись удалили в другой вкладке');
       }
       renderAll();
-      if (e.key) toast('Данные обновлены в другой вкладке');
+      if (e.key) toast('Данные изменились в другой вкладке');
     }
     if (e.key === core.PREFS_KEY || e.key === null) {
       prefs = store.loadPrefs();

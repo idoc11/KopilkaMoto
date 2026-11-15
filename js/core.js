@@ -99,12 +99,14 @@ export function formatSigned(n) {
   return (v < 0 ? '−' : '+') + formatRub(Math.abs(v));
 }
 
-const compactFmt = new Intl.NumberFormat('ru-RU', { notation: 'compact', maximumFractionDigits: 1 });
-
+/** Короткая подпись для графика: 950, 2,5к, 1,2М. Знак показывает цвет столбца. */
 export function formatCompact(n) {
-  const v = roundMoney(n);
-  if (v === 0) return '0';
-  return (v < 0 ? '−' : '+') + compactFmt.format(Math.abs(v));
+  const v = Math.abs(roundMoney(n));
+  const sign = n < 0 ? '−' : '';
+  const short = (x) => x.toLocaleString('ru-RU', { maximumFractionDigits: x < 10 ? 1 : 0 });
+  if (v < 1000) return sign + Math.round(v);
+  if (v < 1e6) return sign + short(v / 1000) + 'к';
+  return sign + short(v / 1e6) + 'М';
 }
 
 /** Разбирает сумму из поля ввода: «1 500», «1500,50», «1500.5». Возвращает NaN при ошибке. */
@@ -288,13 +290,12 @@ export function computeSummary(state, today) {
 
   const diff = total - planAt(settings, today);
   let status;
-  if (phase === 'done') status = { tone: 'good', text: '🎉 Цель достигнута!' };
+  if (phase === 'done') status = { tone: 'good', text: 'Сумма набрана. Можно ехать за мотоциклом.' };
   else if (phase === 'before')
-    status = { tone: 'neutral', text: `План накоплений стартует ${formatDate(settings.startDate)}.` };
-  else if (phase === 'after')
-    status = { tone: 'warn', text: `Срок плана прошёл. Осталось ${formatRub(left)}.` };
-  else if (diff >= 0) status = { tone: 'good', text: `Опережаешь план на ${formatRub(diff)}` };
-  else status = { tone: 'warn', text: `Отстаёшь от плана на ${formatRub(-diff)}` };
+    status = { tone: 'neutral', text: `План начинается ${formatDate(settings.startDate)}.` };
+  else if (phase === 'after') status = { tone: 'warn', text: `Срок прошёл, не хватает ${formatRub(left)}.` };
+  else if (diff >= 0) status = { tone: 'good', text: `Впереди графика на ${formatRub(diff)}` };
+  else status = { tone: 'warn', text: `Отстаёшь от графика на ${formatRub(-diff)}` };
 
   const daysLeftText =
     phase === 'done' ? 'Цель!' : phase === 'after' ? 'Срок прошёл' : `${remainingDays} дн.`;
@@ -344,16 +345,17 @@ export function achievements(state, today) {
   const { streak, activeDays } = incomeStreak(state.entries, today);
   const pct = Math.max(0, (balance(state) / state.settings.goal) * 100);
   const count = Object.keys(state.entries).length;
+  const money = (p) => formatRub(Math.max(0, (state.settings.goal * p) / 100 - balance(state)));
   const items = [
-    { icon: '🌱', title: 'Первый шаг', hint: 'Первая операция', done: count >= 1 },
-    { icon: '🪙', title: '10% цели', hint: 'Накоплено 10%', done: pct >= 10 },
-    { icon: '🏁', title: 'Четверть пути', hint: 'Накоплено 25%', done: pct >= 25 },
-    { icon: '🏍️', title: 'Половина пути', hint: 'Накоплено 50%', done: pct >= 50 },
-    { icon: '🔥', title: 'Почти у цели', hint: 'Накоплено 75%', done: pct >= 75 },
-    { icon: '🏆', title: 'Мечта рядом', hint: 'Цель достигнута', done: pct >= 100 },
-    { icon: '📅', title: '7 активных дней', hint: 'Доходы в 7 разных дней', done: activeDays >= 7 },
-    { icon: '💪', title: 'Десять записей', hint: '10 операций', done: count >= 10 },
-    { icon: '⚡', title: 'Стабильный темп', hint: '3 дня подряд с доходом', done: streak >= 3 },
+    { title: 'Первая запись', hint: 'добавь первую операцию', done: count >= 1 },
+    { title: '10%', hint: `не хватает ${money(10)}`, done: pct >= 10 },
+    { title: 'Четверть', hint: `не хватает ${money(25)}`, done: pct >= 25 },
+    { title: 'Половина', hint: `не хватает ${money(50)}`, done: pct >= 50 },
+    { title: '75%', hint: `не хватает ${money(75)}`, done: pct >= 75 },
+    { title: 'Вся сумма', hint: `не хватает ${money(100)}`, done: pct >= 100 },
+    { title: '7 дней с доходом', hint: `осталось ${Math.max(0, 7 - activeDays)} дн.`, done: activeDays >= 7 },
+    { title: '10 записей', hint: `осталось ${Math.max(0, 10 - count)}`, done: count >= 10 },
+    { title: '3 дня подряд', hint: 'доход три дня без пропуска', done: streak >= 3 },
   ];
   return { items, streak, next: items.find((i) => !i.done) || null };
 }
