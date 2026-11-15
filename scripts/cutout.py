@@ -90,6 +90,8 @@ rgba = np.dstack([rgb_out, a_out * 255]).clip(0, 255).astype(np.uint8)
 img = Image.fromarray(rgba, 'RGBA')
 box = Image.fromarray((a_out > 0.03).astype(np.uint8) * 255).getbbox()
 img = img.crop((max(0, box[0] - 4), max(0, box[1] - 4), min(W, box[2] + 4), min(H, box[3] + 4)))
-img = img.resize((800, round(img.height * 800 / img.width)), Image.LANCZOS)
-img.save(dst, 'WEBP', quality=84, method=6)
-print('saved', dst, img.size, 'zone', zone_start, shadow_start)
+# Два размера для srcset в index.html: 480 px — телефоны с обычной плотностью, 800 px — остальные.
+for width, path in ((800, dst), (480, dst.replace('.webp', '-480.webp'))):
+    out_img = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
+    out_img.save(path, 'WEBP', quality=74, method=6, alpha_quality=80)
+    print('saved', path, out_img.size)

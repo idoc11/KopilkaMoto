@@ -433,7 +433,13 @@ test('мотоцикл мечты на главной: серый в начал�
       ),
     );
   const empty = await open(ctx, env.base, { storage: configured() });
-  assert.equal(await empty.evaluate(() => document.getElementById('dreamBike').naturalWidth), 800);
+  // картинка загрузилась; на узком экране — облегчённая версия 480 px
+  const img = await empty.evaluate(() => {
+    const el = document.getElementById('dreamBike');
+    return { w: el.naturalWidth, src: el.currentSrc };
+  });
+  assert.ok(img.w > 0, JSON.stringify(img));
+  assert.match(img.src, /dream-bike-480\.webp$/);
   assert.equal(await gray(empty), 1);
   const half = await open(ctx, env.base, { storage: configured({ a: entry(today(), 300000) }) });
   assert.equal(await gray(half), 0.5);
