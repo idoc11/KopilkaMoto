@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.2.2';
+const APP_VERSION = '6.2.3';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -133,23 +133,43 @@ async function requestPersistentStorage() {
 // ---------- Уведомления и диалоги ----------
 
 let toastTimer = 0;
+let toastHasAction = false;
+let queuedToast = null;
+
+function hideToast() {
+  $('toast').hidden = true;
+  toastHasAction = false;
+  clearTimeout(toastTimer);
+  // Отложенное сообщение показываем, когда ушёл тост с кнопкой.
+  if (queuedToast) {
+    const next = queuedToast;
+    queuedToast = null;
+    setTimeout(() => toast(...next), 300);
+  }
+}
+
 function toast(text, { action, onAction, duration = 2800 } = {}) {
   const el = $('toast');
+  // Информационный тост не должен вытеснять тост с действием («Отменить»): ставим его в очередь.
+  if (!action && toastHasAction && !el.hidden) {
+    queuedToast = [text, { duration }];
+    return;
+  }
   const btn = $('toastAction');
   $('toastText').textContent = text;
   btn.hidden = !action;
   btn.textContent = action || '';
   btn.onclick = action
     ? () => {
-        el.hidden = true;
-        clearTimeout(toastTimer);
+        hideToast();
         onAction();
       }
     : null;
   el.hidden = false;
+  toastHasAction = Boolean(action);
   announce(action ? `${text}. Кнопка «${action}» доступна несколько секунд.` : text);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.hidden = true), action ? Math.max(duration, 6000) : duration);
+  toastTimer = setTimeout(hideToast, action ? Math.max(duration, 6000) : duration);
 }
 
 function announce(text) {
@@ -659,14 +679,20 @@ function formError(fieldId, text) {
 
 function prepareForm() {
   const t = today();
-  $('date').max = t;
-  if (!ui.editingId && !$('date').value) $('date').value = t;
+  const date = $('date');
+  date.max = t;
+  // Автоматическую дату обновляем (приложение могло быть открыто с вечера), выбранную вручную — не трогаем.
+  if (!ui.editingId && (!date.value || date.value === ui.autoDate)) {
+    date.value = t;
+    ui.autoDate = t;
+  }
 }
 
 function resetForm(kind = 'delivery') {
   ui.editingId = null;
   $('entryForm').reset();
   $('date').value = today();
+  ui.autoDate = today();
   $('date').max = today();
   $('h-add').textContent = 'Новая запись';
   $('saveEntry').textContent = 'Сохранить';
@@ -759,7 +785,20 @@ async function submitEntry(ev) {
 
 function deleteEntry(id, row) {
   if (!state.entries[id]) return;
-  leave(row, () => removeEntry(id));
+  const list = row?.closest('ul');
+  const index = list ? [...list.querySelectorAll('.entry')].indexOf(row) : -1;
+  leave(row, () => {
+    removeEntry(id);
+    if (list) restoreFocus(list.id, index);
+  });
+}
+
+/** После удаления строки фокус — на соседнюю запись, иначе на заголовок раздела (клавиатура, экранный диктор). */
+function restoreFocus(listId, index) {
+  const rows = [...($(listId)?.querySelectorAll('.entry') ?? [])];
+  const row = rows[index] ?? rows[index - 1];
+  const target = row?.querySelector('.entry-actions .icon-btn:last-child') ?? $('h-' + ui.page);
+  target?.focus({ preventScroll: !row });
 }
 
 function removeEntry(id) {
@@ -1234,7 +1273,6 @@ function bind() {
     const page = a?.getAttribute('href').slice(1);
     if (!a || !PAGES.includes(page) || e.defaultPrevented || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
-    if (page === 'add' && !ui.editingId && ui.page !== 'add') resetForm();
     go(page);
   });
   const syncFromUrl = () => {
@@ -1248,12 +1286,45 @@ function bind() {
   });
 }
 
+/**
+ * Защита от кликджекинга: GitHub Pages не позволяет задать X-Frame-Options, а meta-CSP не поддерживает
+ * frame-ancestors. Во фрейме чужого сайта интерфейс не запускаем — только ссылка на открытие напрямую.
+ */
+function blockIfFramed() {
+  let framed;
+  try {
+    framed = window.top !== window.self;
+  } catch {
+    framed = true;
+  }
+  if (!framed) return false;
+  document.body.replaceChildren(
+    h(
+      'div',
+      { id: 'framed', className: 'framed' },
+      h('p', {
+        text: 'KopilkaMoto нельзя использовать внутри другого сайта. Чтобы вести копилку, открой её напрямую.',
+      }),
+      h('a', {
+        className: 'btn primary',
+        href: location.href,
+        target: '_top',
+        rel: 'noopener',
+        text: 'Открыть KopilkaMoto',
+      }),
+    ),
+  );
+  return true;
+}
+
 function init() {
+  if (blockIfFramed()) return;
   reportLoadProblems();
   setupOnboarding();
   bind();
   setKind('delivery');
   $('date').value = today();
+  ui.autoDate = today();
   applyTheme();
   setupSync();
   setupInstall();

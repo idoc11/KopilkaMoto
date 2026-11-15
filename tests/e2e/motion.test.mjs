@@ -65,3 +65,37 @@ test('с «уменьшить движение» анимаций нет, сум
   );
   await ctx.close();
 });
+
+test('тост «Новая отметка» не вытесняет кнопку «Отменить» после восстановления копии', async () => {
+  const ctx = await motion();
+  const page = await open(ctx, env.base, { storage: configured({ a: entry(today(), 100) }) });
+  await page.click('[data-nav=settings]');
+  const backup = {
+    app: 'KopilkaMoto',
+    entries: { big: entry(today(), 200000) },
+    settings: { goal: 600000, start: 0 },
+  };
+  await page.setInputFiles('#file', {
+    name: 'b.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+  await page.waitForSelector('#dialog[open]');
+  await page.click('#dialogOk');
+  await page.waitForFunction(() =>
+    document.querySelector('#toastText').textContent.startsWith('Копия восстановлена'),
+  );
+  await page.click('[data-nav=home]'); // главная пересчитывает отметки — появятся новые
+  await page.waitForTimeout(2500);
+  assert.match(await page.textContent('#toastText'), /Копия восстановлена/);
+  assert.equal(await page.isVisible('#toastAction'), true, 'кнопка «Отменить» должна остаться');
+  // после ухода тоста с отменой показывается отложенное сообщение об отметке
+  await page.waitForFunction(
+    () => document.querySelector('#toastText').textContent.startsWith('Новая отметка'),
+    null,
+    {
+      timeout: 12000,
+    },
+  );
+  await ctx.close();
+});

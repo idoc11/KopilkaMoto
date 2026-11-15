@@ -320,3 +320,87 @@ test('история с тысячами записей: рисуется пор
   assert.doesNotMatch(await page.textContent('#list'), /false/);
   await ctx.close();
 });
+
+test('приложение открыто через полночь: в новой записи сегодняшняя дата, а не вчерашняя', async () => {
+  const ctx = await env.context();
+  const page = await ctx.newPage();
+  await page.clock.install({ time: new Date(2026, 10, 20, 23, 58) });
+  await page.addInitScript((d) => {
+    if (!localStorage.getItem('moto-tracker-v1')) localStorage.setItem('moto-tracker-v1', JSON.stringify(d));
+  }, configured()['moto-tracker-v1']);
+  await page.goto(env.base + '#add');
+  await page.waitForSelector('html[data-ready]');
+  assert.equal(await page.inputValue('#date'), '2026-11-20');
+  await page.click('[data-nav=home]');
+  await page.clock.runFor(5 * 60_000); // 00:03 следующего дня
+  await page.click('[data-nav=add]');
+  assert.equal(await page.inputValue('#date'), '2026-11-21');
+  assert.equal(await page.getAttribute('#date', 'max'), '2026-11-21');
+  // черновик (сумма, тип, комментарий, выбранная вручную дата) переживает переход в другой раздел
+  await page.click('#kinds [data-kind=other]');
+  await page.fill('#amount', '1234');
+  await page.fill('#note', 'Чаевые');
+  await page.fill('#date', '2026-11-18');
+  await page.click('[data-nav=history]');
+  await page.clock.runFor(24 * 3600_000);
+  await page.click('[data-nav=add]');
+  assert.deepEqual(
+    [await page.inputValue('#amount'), await page.inputValue('#note'), await page.inputValue('#date')],
+    ['1234', 'Чаевые', '2026-11-18'],
+  );
+  assert.equal(await page.getAttribute('#kinds [data-kind=other]', 'aria-pressed'), 'true');
+  assert.equal(await page.getAttribute('#date', 'max'), '2026-11-22');
+  // кнопка «Доход» на главной начинает новую запись
+  await page.click('[data-nav=home]');
+  await page.click('[data-add=delivery]');
+  assert.equal(await page.inputValue('#amount'), '');
+  assert.equal(await page.inputValue('#date'), '2026-11-22');
+  await ctx.close();
+});
+
+test('удаление с клавиатуры: фокус переходит на соседнюю запись, а не теряется', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, {
+    storage: configured({
+      a: entry(today(), 1, 'delivery', { note: 'A', ts: 3 }),
+      b: entry(today(), 2, 'delivery', { note: 'B', ts: 2 }),
+      c: entry(today(), 3, 'delivery', { note: 'C', ts: 1 }),
+    }),
+    hash: '#history',
+  });
+  await page.focus('#list [aria-label^="Удалить: B"]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list [aria-label^="Удалить: B"]'));
+  assert.match(
+    await page.evaluate(() => document.activeElement.getAttribute('aria-label') || ''),
+    /^Удалить: C/,
+  );
+  // последняя запись — фокус на предыдущую
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list [aria-label^="Удалить: C"]'));
+  assert.match(
+    await page.evaluate(() => document.activeElement.getAttribute('aria-label') || ''),
+    /^Удалить: A/,
+  );
+  // список пуст — фокус на заголовок раздела
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => !document.querySelector('#list .entry'));
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'h-history');
+  await ctx.close();
+});
+
+test('встраивание в чужой сайт (кликджекинг): приложение не запускается в рамке', async () => {
+  const ctx = await env.context();
+  const page = await ctx.newPage();
+  // «Чужой» сайт: тот же сервер, но другой источник (localhost ≠ 127.0.0.1)
+  env.overrides.set('/evil.html', `<iframe src="${env.base}" width="400" height="600"></iframe>`);
+  await page.goto(env.base.replace('127.0.0.1', 'localhost') + 'evil.html');
+  const frame = await (await page.waitForSelector('iframe')).contentFrame();
+  await frame.waitForLoadState('load');
+  await frame.waitForSelector('#framed', { timeout: 5000 });
+  assert.equal(await frame.locator('nav [data-nav]').count(), 0, 'интерфейс не должен быть доступен');
+  assert.match(await frame.textContent('#framed'), /открой/i);
+  assert.equal(await frame.getAttribute('#framed a', 'target'), '_top');
+  env.overrides.delete('/evil.html');
+  await ctx.close();
+});
