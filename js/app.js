@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.4.0';
+const APP_VERSION = '6.4.1';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
