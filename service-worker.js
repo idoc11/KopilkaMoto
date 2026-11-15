@@ -18,7 +18,6 @@ const SHELL = [
   './js/storage.js',
   './js/markdown.js',
   './js/motion.js',
-  './js/dom.js',
   './fonts/russo-one-cyrillic-400-normal.woff2',
   './fonts/russo-one-latin-400-normal.woff2',
   './images/dream-bike.webp',

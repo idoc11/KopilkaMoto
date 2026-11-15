@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https:; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types kopilkamoto-sw"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self' https:; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
     <title>KopilkaMoto</title>
     <meta
@@ -35,7 +35,6 @@
     <link rel="modulepreload" href="./js/storage.js" />
     <link rel="modulepreload" href="./js/markdown.js" />
     <link rel="modulepreload" href="./js/motion.js" />
-    <link rel="modulepreload" href="./js/dom.js" />
   </head>
   <body>
     <svg class="sprite" aria-hidden="true" focusable="false">
