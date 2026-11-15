@@ -508,3 +508,47 @@ test('частые расходы и замок до цели: сначала п
   assert.deepEqual((await stored(page)).entries, {});
   await ctx.close();
 });
+
+test('переезд на новый телефон: копия переносит частые расходы, замок и тему', async () => {
+  const ctx = await env.context();
+  const old = await open(ctx, env.base, {
+    storage: {
+      ...configured({ a: entry(today(), 500) }),
+      'kopilkamoto-prefs-v2': {
+        theme: 'dark',
+        lock: true,
+        lockSince: 1,
+        presets: [{ note: 'Бензин', amount: 1500 }],
+      },
+    },
+    hash: '#settings',
+  });
+  const [dl] = await Promise.all([old.waitForEvent('download'), old.click('#export')]);
+  const file = await readFile(await dl.path());
+  await ctx.close();
+
+  const fresh = await env.context();
+  const page = await open(fresh, env.base, { storage: configured(), hash: '#settings' });
+  await page.setInputFiles('#file', { name: 'b.json', mimeType: 'application/json', buffer: file });
+  await page.waitForSelector('#dialog[open]');
+  await page.click('#dialogOk');
+  await page.waitForFunction(() =>
+    document.querySelector('#toastText').textContent.startsWith('Копия восстановлена'),
+  );
+  const prefs = await page.evaluate(() => JSON.parse(localStorage.getItem('kopilkamoto-prefs-v2')));
+  assert.deepEqual(
+    [prefs.presets, prefs.lock, prefs.theme],
+    [[{ note: 'Бензин', amount: 1500 }], true, 'dark'],
+  );
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
+  assert.equal(await page.isChecked('#lockToggle'), true);
+  // «Отменить» возвращает и прежние настройки
+  await page.click('#toastAction');
+  const back = await page.evaluate(() => JSON.parse(localStorage.getItem('kopilkamoto-prefs-v2')));
+  assert.deepEqual(
+    back.presets.map((p) => p.note),
+    ['Электричка', 'Еда'],
+  );
+  assert.equal(back.lock, false);
+  await fresh.close();
+});

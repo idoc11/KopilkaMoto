@@ -412,3 +412,30 @@ test('частые расходы: значения по умолчанию, п�
   const many = Array.from({ length: 20 }, (_, i) => ({ note: 'P' + i, amount: 1 }));
   assert.equal(core.normalizePresets(many).length, core.MAX_PRESETS);
 });
+
+test('резервная копия переносит частые расходы, замок и тему', () => {
+  const s = st({ a: e(T, 100) });
+  const prefs = {
+    presets: [{ note: 'Бензин', amount: 1500 }],
+    lock: true,
+    theme: 'dark',
+    apiUrl: 'https://secret.example/',
+  };
+  const json = JSON.stringify(core.buildBackup(s, new Date(), prefs));
+  assert.doesNotMatch(json, /secret\.example/, 'адрес прокси в копию не попадает');
+  const back = core.parseBackup(json, T);
+  assert.deepEqual(back.preferences, {
+    presets: [{ note: 'Бензин', amount: 1500 }],
+    lock: true,
+    theme: 'dark',
+  });
+  // старые копии без настроек — текущие настройки не трогаем
+  assert.equal(core.parseBackup(JSON.stringify(core.buildBackup(s)), T).preferences, null);
+  // мусор в настройках копии отбрасывается
+  const junk = { ...core.buildBackup(s), preferences: { presets: 'x', lock: 'yes', theme: 'neon' } };
+  assert.deepEqual(core.parseBackup(JSON.stringify(junk), T).preferences, {
+    presets: [],
+    lock: false,
+    theme: 'auto',
+  });
+});

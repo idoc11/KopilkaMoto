@@ -1043,7 +1043,7 @@ function submitApi(ev) {
 function exportBackup() {
   download(
     `kopilkamoto-${today()}.json`,
-    JSON.stringify(core.buildBackup(state), null, 2),
+    JSON.stringify(core.buildBackup(state, new Date(), prefs), null, 2),
     'application/json',
   );
   prefs.lastBackupAt = Date.now();
@@ -1082,8 +1082,10 @@ async function importBackup(file) {
   });
   if (!ok) return;
   const previous = state;
+  const previousPrefs = { ...prefs };
   if (current) store.preserveRaw(core.serializeState(previous));
   if (!commit(parsed.state, { change: false })) return;
+  if (parsed.preferences) applyBackupPreferences(parsed.preferences);
   if (ui.editingId) resetForm();
   ui.showOnboarding = false;
   renderAll();
@@ -1095,12 +1097,24 @@ async function importBackup(file) {
       duration: 8000,
       onAction: () => {
         if (commit(previous, { change: false })) {
+          prefs = previousPrefs;
+          savePrefs();
+          applyTheme();
           renderAll();
           toast('Прежние данные возвращены');
         }
       },
     },
   );
+}
+
+/** Настройки из копии: частые расходы, замок, тема. Адрес прокси и даты копий остаются местными. */
+function applyBackupPreferences(p) {
+  const lockChanged = p.lock !== prefs.lock;
+  prefs = { ...prefs, presets: p.presets, lock: p.lock, theme: p.theme };
+  if (lockChanged) prefs.lockSince = p.lock ? Date.now() : 0;
+  savePrefs();
+  applyTheme();
 }
 
 function exportCsv() {

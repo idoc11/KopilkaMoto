@@ -7,7 +7,7 @@ export const RAW_PREFIX = 'moto-tracker-v1-raw-';
 /** Сколько последних копий исходных данных хранить (каждая — полный объём данных). */
 export const MAX_RAW_COPIES = 5;
 export const SCHEMA_VERSION = 2;
-export const BACKUP_VERSION = 6;
+export const BACKUP_VERSION = 7;
 export const APP_NAMES = ['KopilkaMoto', 'moto-savings-tracker'];
 
 export const DEFAULT_GOAL = 600000;
@@ -431,14 +431,31 @@ export function buildCsv(entries) {
   return '﻿' + rows.map((r) => r.map(csvCell).join(';')).join('\r\n');
 }
 
-export function buildBackup(state, now = new Date()) {
-  return {
+const THEMES = ['auto', 'light', 'dark'];
+
+/**
+ * Резервная копия. Кроме данных переносит настройки, которые нужны на новом телефоне:
+ * частые расходы, замок до цели, тему. Адрес прокси не включается.
+ */
+export function buildBackup(state, now = new Date(), prefs = null) {
+  const backup = {
     app: 'KopilkaMoto',
     version: BACKUP_VERSION,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: now.toISOString(),
     entries: state.entries,
     settings: state.settings,
+  };
+  if (prefs) backup.preferences = { presets: prefs.presets, lock: prefs.lock === true, theme: prefs.theme };
+  return backup;
+}
+
+function parsePreferences(p) {
+  if (!isPlainObject(p)) return null;
+  return {
+    presets: Array.isArray(p.presets) ? normalizePresets(p.presets) : [],
+    lock: p.lock === true,
+    theme: THEMES.includes(p.theme) ? p.theme : 'auto',
   };
 }
 
@@ -467,6 +484,7 @@ export function parseBackup(text, today) {
     rejected,
     fixes,
     total: Object.keys(data.entries).length,
+    preferences: parsePreferences(data.preferences),
   };
 }
 
