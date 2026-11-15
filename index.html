@@ -13,8 +13,8 @@
       content="KopilkaMoto — трекер накоплений на мотоцикл. Работает офлайн, данные хранятся на устройстве."
     />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f1eee8" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0e11" media="(prefers-color-scheme: dark)" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="KopilkaMoto" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -81,7 +81,10 @@
       <header class="top">
         <div class="brand">
           <img class="logo" src="./icons/icon.svg" alt="" width="36" height="36" />
-          <h1>KopilkaMoto</h1>
+          <div class="brand-text">
+            <h1>KopilkaMoto</h1>
+            <span class="brand-sub">Moto Garage Vault</span>
+          </div>
         </div>
         <button
           class="icon-btn theme-btn"
@@ -172,57 +175,70 @@
             </div>
           </form>
 
-          <div class="dash">
-            <figure class="dream">
-              <img
-                id="dreamBike"
-                src="./images/dream-bike.webp"
-                srcset="./images/dream-bike-480.webp 480w, ./images/dream-bike.webp 800w"
-                sizes="(max-width: 425px) calc(100vw - 32px), 393px"
-                alt="Мотоцикл мечты"
-                width="800"
-                height="468"
-                decoding="async"
-                fetchpriority="high"
-              />
-            </figure>
-            <p class="dash-label">Накоплено</p>
-            <p class="total" id="total">0 ₽</p>
-            <p class="goal" id="goalText"></p>
-            <!-- [html-validate-disable-next prefer-native-element -- дорога с мотоциклом: свой progressbar с ARIA] -->
-            <div
-              class="road"
-              id="progress"
-              role="progressbar"
-              aria-label="Прогресс к цели"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow="0"
-            >
-              <span class="road-done" id="fill"></span>
-              <svg class="road-bike" aria-hidden="true"><use href="#i-moto" /></svg>
-              <svg class="road-flag" aria-hidden="true"><use href="#i-flag" /></svg>
+          <div class="hero-card">
+            <div class="dash">
+              <figure class="dream">
+                <img
+                  id="dreamBike"
+                  src="./images/dream-bike.webp"
+                  srcset="./images/dream-bike-480.webp 480w, ./images/dream-bike.webp 800w"
+                  sizes="(max-width: 425px) calc(100vw - 32px), 393px"
+                  alt="Мотоцикл мечты"
+                  width="800"
+                  height="468"
+                  decoding="async"
+                  fetchpriority="high"
+                />
+              </figure>
+              <div class="dash-top">
+                <p class="dash-label">Накоплено в гараж</p>
+                <span class="pct-pill" id="pct">0%</span>
+              </div>
+              <p class="total" id="total">0 ₽</p>
+              <div class="goal-row">
+                <p class="goal" id="goalText"></p>
+                <span class="left-pill" id="left"></span>
+              </div>
+              <!-- [html-validate-disable-next prefer-native-element -- дорога с мотоциклом: свой progressbar с ARIA] -->
+              <div
+                class="road"
+                id="progress"
+                role="progressbar"
+                aria-label="Прогресс к цели"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <span class="road-done" id="fill"></span>
+                <svg class="road-bike" aria-hidden="true"><use href="#i-moto" /></svg>
+                <svg class="road-flag" aria-hidden="true"><use href="#i-flag" /></svg>
+              </div>
+              <div class="meta">
+                <span>Старт</span>
+                <span>Финиш</span>
+              </div>
             </div>
-            <div class="meta"><span id="pct">0%</span><span id="left"></span></div>
-          </div>
 
-          <dl class="readout">
-            <div>
-              <dt>Нужно в день</dt>
-              <dd id="perDay">—</dd>
+            <dl class="readout">
+              <div>
+                <dt>Нужно в день</dt>
+                <dd id="perDay">—</dd>
+              </div>
+              <div>
+                <dt>Доход в час</dt>
+                <dd id="perHour">—</dd>
+              </div>
+              <div>
+                <dt>До срока</dt>
+                <dd id="daysLeft">—</dd>
+              </div>
+            </dl>
+            <div class="status-box">
+              <p class="status neutral" id="status">Записей пока нет.</p>
+              <p class="forecast" id="forecast"></p>
+              <p class="lock-info" id="lockInfo" hidden></p>
             </div>
-            <div>
-              <dt>Доход в час</dt>
-              <dd id="perHour">—</dd>
-            </div>
-            <div>
-              <dt>До срока</dt>
-              <dd id="daysLeft">—</dd>
-            </div>
-          </dl>
-          <p class="status neutral" id="status">Записей пока нет.</p>
-          <p class="forecast" id="forecast"></p>
-          <p class="lock-info" id="lockInfo" hidden></p>
+          </div>
 
           <div class="actions">
             <button class="btn primary big" type="button" data-add="delivery">
@@ -240,7 +256,7 @@
 
           <div class="head">
             <h3>Неделя</h3>
-            <span id="weekTotal" class="hint"></span>
+            <span id="weekTotal" class="hint badge-pill"></span>
           </div>
           <div class="card">
             <div class="chart" id="chart" role="group" aria-label="Чистый результат по дням"></div>
@@ -248,32 +264,38 @@
           </div>
 
           <h3 class="head" id="monthTitle">Этот месяц</h3>
-          <dl class="readout">
-            <div>
-              <dt>Пришло</dt>
-              <dd class="pos" id="monthIncome">0 ₽</dd>
-            </div>
-            <div>
-              <dt>Ушло</dt>
-              <dd class="neg" id="monthSpent">0 ₽</dd>
-            </div>
-            <div>
-              <dt>Итого</dt>
-              <dd id="monthNet">0 ₽</dd>
-            </div>
-          </dl>
+          <div class="card month-card">
+            <dl class="readout month-readout">
+              <div>
+                <dt>Пришло</dt>
+                <dd class="pos" id="monthIncome">0 ₽</dd>
+              </div>
+              <div>
+                <dt>Ушло</dt>
+                <dd class="neg" id="monthSpent">0 ₽</dd>
+              </div>
+              <div>
+                <dt>Итого</dt>
+                <dd id="monthNet">0 ₽</dd>
+              </div>
+            </dl>
+          </div>
 
           <div id="spendWrap" hidden>
             <h3 class="head">Куда ушли деньги</h3>
-            <ul class="spend" id="spendList"></ul>
+            <div class="card">
+              <ul class="spend" id="spendList"></ul>
+            </div>
           </div>
 
           <div class="head">
             <h3>Отметки</h3>
             <span class="hint" id="streakLabel"></span>
           </div>
-          <ul class="marks" id="achievements"></ul>
-          <p class="hint next-mark" id="nextAchievement"></p>
+          <div class="card">
+            <ul class="marks" id="achievements"></ul>
+            <p class="hint next-mark" id="nextAchievement"></p>
+          </div>
 
           <div class="head">
             <h3>Последние записи</h3>
@@ -296,6 +318,7 @@
               <input
                 type="text"
                 id="amount"
+                class="amount-input"
                 inputmode="decimal"
                 autocomplete="off"
                 enterkeyhint="done"
@@ -352,7 +375,7 @@
         <section class="page" id="page-history" aria-labelledby="h-history" hidden>
           <div class="head">
             <h2 id="h-history" tabindex="-1">История</h2>
-            <span id="count" class="hint"></span>
+            <span id="count" class="hint badge-pill"></span>
           </div>
           <div class="card">
             <label class="field"

@@ -7,7 +7,7 @@ const APP_VERSION = '6.6.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
-const THEME_COLORS = { light: '#f1eee8', dark: '#141413' };
+const THEME_COLORS = { light: '#f4f2ed', dark: '#0d0e11' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
 
 const $ = (id) => document.getElementById(id);
