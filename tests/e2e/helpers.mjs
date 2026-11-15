@@ -1,42 +1,5 @@
-import { writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { startServer } from '../../scripts/serve.mjs';
-
-// ---------- Покрытие JS (npm run test:e2e:coverage) ----------
-// При заданной E2E_COVERAGE_DIR каждая страница собирает V8-покрытие с момента создания
-// и сбрасывает его в файл при закрытии страницы, контекста или браузера.
-const COVERAGE_DIR = process.env.E2E_COVERAGE_DIR;
-let dumps = 0;
-
-async function startCoverage(page) {
-  if (!COVERAGE_DIR) return;
-  page.__coverage = page.coverage.startJSCoverage({ resetOnNavigation: false }).catch(() => null);
-  const close = page.close.bind(page);
-  page.close = async (...args) => {
-    await dumpCoverage(page);
-    return close(...args);
-  };
-}
-
-async function dumpCoverage(page) {
-  if (!page.__coverage || page.isClosed()) return;
-  const started = page.__coverage;
-  page.__coverage = null;
-  try {
-    await started;
-    const entries = await page.coverage.stopJSCoverage();
-    const ours = entries.filter((e) => /\/js\/.+\.js$/.test(new URL(e.url).pathname));
-    if (ours.length)
-      writeFileSync(join(COVERAGE_DIR, `${process.pid}-${++dumps}.json`), JSON.stringify(ours));
-  } catch {
-    /* страница уже закрыта */
-  }
-}
-
-async function dumpContext(ctx) {
-  await Promise.all(ctx.pages().map(dumpCoverage));
-}
 
 export const TODAY = new Date();
 export const iso = (d) =>
@@ -59,7 +22,7 @@ export async function setup({ root = '.' } = {}) {
     overrides,
     browser,
     async context(opts = {}) {
-      const ctx = await browser.newContext({
+      return browser.newContext({
         viewport: { width: 390, height: 844 },
         serviceWorkers: 'block',
         acceptDownloads: true,
@@ -67,18 +30,8 @@ export async function setup({ root = '.' } = {}) {
         reducedMotion: 'reduce',
         ...opts,
       });
-      if (COVERAGE_DIR) {
-        ctx.on('page', startCoverage);
-        const close = ctx.close.bind(ctx);
-        ctx.close = async (...args) => {
-          await dumpContext(ctx);
-          return close(...args);
-        };
-      }
-      return ctx;
     },
     async close() {
-      if (COVERAGE_DIR) await Promise.all(browser.contexts().map(dumpContext));
       await browser.close();
       server.close();
     },
@@ -101,7 +54,6 @@ export async function open(ctx, base, { storage, hash = '' } = {}) {
         localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
     }, storage);
   }
-  await page.__coverage; // покрытие должно начаться до загрузки скриптов
   await page.goto(base + hash);
   await page.waitForSelector('html[data-ready]');
   return page;
