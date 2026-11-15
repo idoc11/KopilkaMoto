@@ -441,5 +441,70 @@ test('мотоцикл мечты на главной: серый в начал�
   const done = await open(ctx, env.base, { storage: configured({ a: entry(today(), 600000) }) });
   assert.equal(await gray(done), 0);
   assert.equal(await done.evaluate(() => document.querySelector('.dream').classList.contains('done')), true);
+  // тени и подсветки у мотоцикла нет
+  assert.equal(
+    await done.evaluate(() =>
+      getComputedStyle(document.getElementById('dreamBike')).filter.includes('drop-shadow'),
+    ),
+    false,
+  );
+  await ctx.close();
+});
+
+test('частые расходы: запись одним нажатием с отменой, подстановка в форму, настройка списка', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, { storage: configured() });
+  const chips = () => page.locator('#quickSpend .preset').allTextContents();
+  assert.deepEqual(await chips(), ['Электричка −100 ₽', 'Еда −400 ₽']);
+
+  // одно нажатие — расход записан сегодняшним днём
+  await page.click('#quickSpend [aria-label^="Записать расход: Электричка"]');
+  const entries = Object.values((await stored(page)).entries);
+  assert.deepEqual(
+    entries.map((e) => [e.kind, e.amount, e.note, e.date]),
+    [['spent', 100, 'Электричка', today()]],
+  );
+  assert.match(await page.textContent('#toastText'), /Записано: Электричка/);
+  await page.click('#toastAction');
+  assert.deepEqual((await stored(page)).entries, {});
+
+  // в форме в режиме «Расход» — подстановка суммы и комментария
+  await page.click('[data-add=spent]');
+  assert.equal(await page.isVisible('#presetChips'), true);
+  await page.click('#presetChips [aria-label^="Подставить: Еда"]');
+  assert.deepEqual([await page.inputValue('#amount'), await page.inputValue('#note')], ['400', 'Еда']);
+  await page.click('#kinds [data-kind=delivery]');
+  assert.equal(await page.isVisible('#presetChips'), false);
+
+  // настройка: удалить, добавить, дубль — ошибка; сохраняется после перезагрузки
+  await page.click('[data-nav=settings]');
+  await page.click('[aria-label="Удалить частый расход Еда"]');
+  await page.fill('#presetName', 'Кофе');
+  await page.fill('#presetAmount', '250');
+  await page.click('#presetForm button[type=submit]');
+  await page.fill('#presetName', 'кофе');
+  await page.fill('#presetAmount', '1');
+  await page.click('#presetForm button[type=submit]');
+  assert.match(await page.textContent('#presetError'), /уже есть/);
+  await page.reload();
+  await page.waitForSelector('html[data-ready]');
+  assert.deepEqual(await page.locator('#quickSpend .preset').allTextContents(), [
+    'Электричка −100 ₽',
+    'Кофе −250 ₽',
+  ]);
+  assert.deepEqual(page.errors, []);
+  await ctx.close();
+});
+
+test('частые расходы и замок до цели: сначала подтверждение', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, {
+    storage: { ...configured(), 'kopilkamoto-prefs-v2': { theme: 'auto', lock: true, lockSince: 1 } },
+  });
+  await page.click('#quickSpend [aria-label^="Записать расход: Еда"]');
+  await page.waitForSelector('#dialog[open]');
+  assert.match(await page.textContent('#dialogTitle'), /Взять 400/);
+  await page.click('#dialogCancel');
+  assert.deepEqual((await stored(page)).entries, {});
   await ctx.close();
 });

@@ -179,7 +179,7 @@
                 src="./images/dream-bike.webp"
                 alt="Мотоцикл мечты"
                 width="800"
-                height="464"
+                height="468"
                 decoding="async"
                 fetchpriority="high"
               />
@@ -229,6 +229,11 @@
             <button class="btn big" type="button" data-add="spent">
               <svg class="i" aria-hidden="true"><use href="#i-minus" /></svg>Расход
             </button>
+          </div>
+
+          <div id="presetsHome" hidden>
+            <h3 class="head">Частые расходы</h3>
+            <div class="chips presets" id="quickSpend" role="group" aria-label="Записать частый расход"></div>
           </div>
 
           <div class="head">
@@ -297,6 +302,13 @@
               <button class="btn small" type="button" data-amount="3000">+3 000</button>
               <button class="btn small" type="button" data-amount="5000">+5 000</button>
             </div>
+            <div
+              class="chips presets"
+              id="presetChips"
+              role="group"
+              aria-label="Подставить частый расход"
+              hidden
+            ></div>
             <div class="grid">
               <label class="field">Дата <input id="date" type="date" required /></label>
               <label class="field" id="hoursWrap"
@@ -418,6 +430,38 @@
             <p class="field-error" id="settingsError" role="alert" hidden></p>
             <button class="btn primary wide" type="submit">Сохранить цель и сроки</button>
           </form>
+
+          <div class="card spaced">
+            <h3>Частые расходы</h3>
+            <p class="hint">Кнопки на главной: одно нажатие — и расход записан сегодняшним днём.</p>
+            <ul class="raw-list preset-list" id="presetList"></ul>
+            <form id="presetForm" novalidate>
+              <div class="grid">
+                <label class="field"
+                  >Название
+                  <input
+                    type="text"
+                    id="presetName"
+                    maxlength="30"
+                    autocomplete="off"
+                    placeholder="Электричка"
+                  />
+                </label>
+                <label class="field"
+                  >Сумма, ₽
+                  <input
+                    type="text"
+                    id="presetAmount"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    placeholder="100"
+                  />
+                </label>
+              </div>
+              <p class="field-error" id="presetError" role="alert" hidden></p>
+              <button class="btn wide" type="submit">Добавить частый расход</button>
+            </form>
+          </div>
 
           <div class="card spaced">
             <h3>Замок до цели</h3>

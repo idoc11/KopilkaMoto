@@ -3,7 +3,7 @@
 
 // VERSION меняй при каждом релизе. BUILD подставляет workflow публикации (хеш коммита),
 // поэтому при деплое через GitHub Actions кеш обновляется автоматически.
-const VERSION = 'v16';
+const VERSION = 'v17';
 const BUILD = 'dev';
 const PREFIX = 'kopilkamoto-';
 const CACHE = `${PREFIX}${VERSION}-${BUILD}`;

@@ -388,3 +388,27 @@ test('часы: показ «7 ч 30 мин» и обратное преобра
     assert.equal(core.hoursInputValue(stored), m ? `7:${String(m).padStart(2, '0')}` : '7');
   }
 });
+
+test('частые расходы: значения по умолчанию, проверка, дубли, лимит', () => {
+  assert.deepEqual(core.normalizePresets(undefined), [
+    { note: 'Электричка', amount: 100 },
+    { note: 'Еда', amount: 400 },
+  ]);
+  assert.deepEqual(core.normalizePresets([]), [], 'пользователь удалил все — не возвращаем стандартные');
+  assert.deepEqual(
+    core.normalizePresets([
+      { note: '  Бензин ', amount: '1500.5' },
+      { note: 'бензин', amount: 10 },
+      { note: '', amount: 10 },
+      { note: 'Ноль', amount: 0 },
+      { note: 'x'.repeat(50), amount: 1 },
+      null,
+    ]),
+    [
+      { note: 'Бензин', amount: 1500.5 },
+      { note: 'x'.repeat(core.MAX_PRESET_NAME), amount: 1 },
+    ],
+  );
+  const many = Array.from({ length: 20 }, (_, i) => ({ note: 'P' + i, amount: 1 }));
+  assert.equal(core.normalizePresets(many).length, core.MAX_PRESETS);
+});

@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.4.1';
+const APP_VERSION = '6.5.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -417,6 +417,7 @@ function renderHome() {
       ? recent.map(([id, e]) => entryItem(id, e))
       : [h('li', { className: 'empty', text: 'Пусто. Нажми «Доход», когда закроешь первую смену.' })]),
   );
+  renderPresets();
   renderBanners();
   ui.flashId = null;
   if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), MOTION.markToast);
@@ -583,6 +584,7 @@ function renderSettings() {
   $('deadlineInput').value = s.deadline;
   $('apiUrl').value = prefs.apiUrl;
   $('lockToggle').checked = prefs.lock;
+  renderPresets();
   $('backupInfo').textContent = prefs.lastBackupAt
     ? `Последняя копия: ${formatAgo(prefs.lastBackupAt)}.`
     : 'Резервную копию ещё не скачивали.';
@@ -665,6 +667,7 @@ function setKind(kind) {
   }
   $('hoursWrap').hidden = kind !== 'delivery';
   $('quickAmounts').hidden = kind === 'spent';
+  $('presetChips').hidden = kind !== 'spent' || !prefs.presets.length;
 }
 
 function clearFormErrors() {
@@ -725,6 +728,137 @@ function editEntry(id) {
   go('add');
 }
 
+/** Замок до цели: подтверждение расхода с задержкой. Без замка — сразу true. */
+async function confirmSpend(amount) {
+  if (!prefs.lock) return true;
+  const left = Math.max(0, state.settings.goal - core.balance(state));
+  const delay = core.delayDays(state, amount, today());
+  const lines = [
+    `До мотоцикла не хватает ${core.formatRub(left)}.`,
+    delay ? `Этот расход отодвинет покупку примерно на ${delay} дн.` : '',
+    'Если это не срочно — лучше отложить.',
+  ].filter(Boolean);
+  return confirmDialog({
+    title: `Взять ${core.formatRub(amount)} из копилки?`,
+    text: lines.join('\n'),
+    ok: 'Всё равно записать',
+    danger: true,
+    delay: 3,
+  });
+}
+
+// ---------- Частые расходы ----------
+
+const presetLabel = (p) => `${p.note} −${core.formatRub(p.amount)}`;
+
+function renderPresets() {
+  const list = prefs.presets;
+  $('presetsHome').hidden = !list.length;
+  $('quickSpend').replaceChildren(
+    ...list.map((p) =>
+      h('button', {
+        className: 'btn small preset',
+        type: 'button',
+        text: presetLabel(p),
+        'aria-label': `Записать расход: ${p.note}, ${core.formatRub(p.amount)}`,
+        onClick: () => recordPreset(p),
+      }),
+    ),
+  );
+  $('presetChips').replaceChildren(
+    ...list.map((p) =>
+      h('button', {
+        className: 'btn small preset',
+        type: 'button',
+        text: presetLabel(p),
+        'aria-label': `Подставить: ${p.note}, ${core.formatRub(p.amount)}`,
+        onClick: () => {
+          $('amount').value = core.formatNumber(p.amount);
+          $('note').value = p.note;
+          $('amount').removeAttribute('aria-invalid');
+        },
+      }),
+    ),
+  );
+  $('presetChips').hidden = ui.kind !== 'spent' || !list.length;
+  $('presetList').replaceChildren(
+    ...(list.length
+      ? list.map((p, i) =>
+          h(
+            'li',
+            {},
+            h('span', { text: `${p.note} — ${core.formatRub(p.amount)}` }),
+            h('button', {
+              className: 'btn small ghost',
+              type: 'button',
+              text: 'Удалить',
+              'aria-label': `Удалить частый расход ${p.note}`,
+              onClick: () => {
+                prefs.presets = prefs.presets.filter((_, j) => j !== i);
+                savePrefs();
+                renderPresets();
+              },
+            }),
+          ),
+        )
+      : [h('li', { className: 'empty', text: 'Пока пусто. Добавь первый ниже.' })]),
+  );
+}
+
+async function recordPreset(p) {
+  if (!(await confirmSpend(p.amount))) return;
+  const id = core.newEntryId();
+  const next = cloneState();
+  next.entries[id] = {
+    date: today(),
+    amount: p.amount,
+    hours: 0,
+    kind: 'spent',
+    note: p.note,
+    ts: Date.now(),
+  };
+  if (!commit(next)) return;
+  ui.flashId = id;
+  haptic();
+  renderAll();
+  toast(`Записано: ${presetLabel(p)}`, {
+    action: 'Отменить',
+    onAction: () => {
+      if (!state.entries[id]) return;
+      const back = cloneState();
+      delete back.entries[id];
+      if (commit(back)) {
+        renderAll();
+        toast('Расход отменён');
+      }
+    },
+  });
+}
+
+function submitPreset(ev) {
+  ev.preventDefault();
+  const err = $('presetError');
+  err.hidden = true;
+  const note = $('presetName').value.trim();
+  const amount = core.parseAmount($('presetAmount').value);
+  let msg = '';
+  if (!note) msg = 'Напиши название, например «Электричка».';
+  else if (!(amount >= 1 && amount <= core.MAX_AMOUNT)) msg = 'Сумма — от 1 ₽, например 100 или 99,50.';
+  else if (prefs.presets.some((p) => p.note.toLowerCase() === note.toLowerCase())) msg = 'Такой уже есть.';
+  else if (prefs.presets.length >= core.MAX_PRESETS)
+    msg = `Можно не больше ${core.MAX_PRESETS} частых расходов.`;
+  if (msg) {
+    err.textContent = msg;
+    err.hidden = false;
+    return;
+  }
+  prefs.presets = core.normalizePresets([...prefs.presets, { note, amount }]);
+  savePrefs();
+  $('presetForm').reset();
+  renderPresets();
+  toast(`Добавлено: ${note}`);
+}
+
 async function submitEntry(ev) {
   ev.preventDefault();
   clearFormErrors();
@@ -752,23 +886,7 @@ async function submitEntry(ev) {
       return formError('hours', 'Часы работы — от 0 до 24, например 7:30 или 7,5.');
     }
   }
-  if (prefs.lock && ui.kind === 'spent' && !editing) {
-    const left = Math.max(0, state.settings.goal - core.balance(state));
-    const delay = core.delayDays(state, amount, t);
-    const lines = [
-      `До мотоцикла не хватает ${core.formatRub(left)}.`,
-      delay ? `Этот расход отодвинет покупку примерно на ${delay} дн.` : '',
-      'Если это не срочно — лучше отложить.',
-    ].filter(Boolean);
-    const sure = await confirmDialog({
-      title: `Взять ${core.formatRub(amount)} из копилки?`,
-      text: lines.join('\n'),
-      ok: 'Всё равно записать',
-      danger: true,
-      delay: 3,
-    });
-    if (!sure) return;
-  }
+  if (ui.kind === 'spent' && !editing && !(await confirmSpend(amount))) return;
   const id = editing || core.newEntryId();
   const next = cloneState();
   next.entries[id] = {
@@ -1240,6 +1358,7 @@ function bind() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => {
     if (prefs.theme === 'auto') applyTheme();
   });
+  $('presetForm').addEventListener('submit', submitPreset);
   $('lockToggle').addEventListener('change', (e) => {
     prefs.lock = e.target.checked;
     prefs.lockSince = prefs.lock ? Date.now() : 0;

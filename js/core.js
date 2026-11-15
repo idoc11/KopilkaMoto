@@ -639,3 +639,28 @@ export function withdrawals(entries, sinceTs) {
   }
   return { count, sum: roundMoney(sum) };
 }
+
+// ---------- Частые расходы ----------
+
+export const DEFAULT_PRESETS = [
+  { note: 'Электричка', amount: 100 },
+  { note: 'Еда', amount: 400 },
+];
+export const MAX_PRESETS = 8;
+export const MAX_PRESET_NAME = 30;
+
+/** Проверяет список частых расходов. Нет списка (старые настройки) — значения по умолчанию; пустой — пустой. */
+export function normalizePresets(list) {
+  if (!Array.isArray(list)) return DEFAULT_PRESETS.map((p) => ({ ...p }));
+  const out = [];
+  for (const p of list) {
+    if (!p || typeof p !== 'object') continue;
+    const note = typeof p.note === 'string' ? p.note.trim().slice(0, MAX_PRESET_NAME) : '';
+    const amount = roundMoney(p.amount);
+    if (!note || !(amount >= 1 && amount <= MAX_AMOUNT)) continue;
+    if (out.some((x) => x.note.toLowerCase() === note.toLowerCase())) continue;
+    out.push({ note, amount });
+    if (out.length === MAX_PRESETS) break;
+  }
+  return out;
+}

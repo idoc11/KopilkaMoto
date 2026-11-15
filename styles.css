@@ -271,9 +271,6 @@ a {
   filter: grayscale(var(--gray)) contrast(calc(1 - var(--gray) * 0.08));
   transition: filter var(--t-move) ease;
 }
-.dream.done img {
-  filter: drop-shadow(0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent));
-}
 .dash {
   padding: 10px 0 4px;
 }
@@ -595,6 +592,19 @@ h2.page-title {
   border-color: transparent;
   background: transparent;
   color: var(--muted);
+}
+.chips.presets {
+  margin-top: 4px;
+}
+#presetChips {
+  margin-top: 8px;
+}
+.btn.preset {
+  border-style: dashed;
+  font-variant-numeric: tabular-nums;
+}
+.preset-list {
+  margin: 8px 0 4px;
 }
 .entries .more {
   list-style: none;
