@@ -1,459 +1,60 @@
-<!doctype html><html><head><meta charset=utf8><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#d6402a"><meta name="description" content="Личный трекер накоплений на мотоцикл: доходы, расходы, план и история."><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Копилка"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="./icon.svg"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
-.app-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.app-actions button,.backup-actions button{border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 13px var(--f-body);padding:9px 12px;border-radius:10px}
-#offlineState{font-size:11px;color:var(--muted)}
-.backup-actions{display:flex;gap:8px;flex-wrap:wrap}
-button{touch-action:manipulation}
-input,button{ -webkit-tap-highlight-color:transparent }
-@media(max-width:360px){.stats{gap:5px}.stat b{font-size:14px}.panel{padding:13px}}
-
-</style></head><body>
-<title>Копилка на мотоцикл</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700&display=swap">
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171a21"><meta name="description" content="KopilkaMoto — трекер накоплений на мотоцикл">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon.svg">
+<title>KopilkaMoto</title>
 <style>
-/* Layout: one-column phone app — gauge hero, plan status, quick add, weekly, history */
-:root{
-  --bg:#f3f2ef; --surface:#ffffff; --fg:#1d1c1a; --muted:#6e6a64; --line:#e3e0da;
-  --accent:#d6402a; --accent-soft:#f7ddd7; --good:#2f8a4e; --good-soft:#dcefe2; --warn:#b5620e; --warn-soft:#f6e6d3;
-  --track:#e6e3dd;
-  --f-display:"Unbounded","Manrope",system-ui,sans-serif;
-  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#141413; --surface:#1e1d1b; --fg:#efece6; --muted:#9d988f; --line:#2f2d2a;
-  --accent:#f0624a; --accent-soft:#3a201b; --good:#5cc27f; --good-soft:#1c3024; --warn:#e9a157; --warn-soft:#352717;
-  --track:#2c2a27; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#141413; --surface:#1e1d1b; --fg:#efece6; --muted:#9d988f; --line:#2f2d2a;
-  --accent:#f0624a; --accent-soft:#3a201b; --good:#5cc27f; --good-soft:#1c3024; --warn:#e9a157; --warn-soft:#352717;
-  --track:#2c2a27; color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
-.app{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-.num{font-variant-numeric:tabular-nums}
-h1{font-family:var(--f-display);font-weight:700;font-size:20px;margin:0;letter-spacing:-.01em;text-wrap:balance}
-h2{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
-.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.top small{color:var(--muted)}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
-/* gauge */
-.gauge{position:relative;display:flex;flex-direction:column;align-items:center}
-.gauge svg{width:100%;max-width:320px;height:auto;display:block}
-.gauge-read{margin-top:-58px;text-align:center}
-.gauge-read .big{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:-.02em}
-.gauge-read .sub{color:var(--muted);font-size:13px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{display:flex;flex-direction:column;gap:2px;min-width:0}
-.stat b{font-size:16px}
-.stat span{font-size:12px;color:var(--muted)}
-.status{border-radius:10px;padding:10px 12px;font-weight:600;font-size:14px}
-.status.ok{background:var(--good-soft);color:var(--good)}
-.status.behind{background:var(--warn-soft);color:var(--warn)}
-.status.idle{background:var(--track);color:var(--muted)}
-/* form */
-form{display:flex;flex-direction:column;gap:10px}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--track);border-radius:10px;padding:3px;gap:3px}
-.seg button{border:0;background:transparent;color:var(--muted);font:600 13px var(--f-body);padding:8px 4px;border-radius:8px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.row{display:grid;grid-template-columns:1.4fr 1fr;gap:8px}
-label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
-input{font:600 16px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;box-sizing:border-box;min-width:0}
-input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.amount input{font-family:var(--f-display);font-size:22px}
-.quick{display:flex;gap:6px;flex-wrap:wrap}
-.quick button{border:1px solid var(--line);background:transparent;color:var(--fg);font:600 13px var(--f-body);padding:6px 10px;border-radius:999px;cursor:pointer}
-.primary{border:0;background:var(--accent);color:#fff;font:700 15px var(--f-body);padding:13px;border-radius:10px;cursor:pointer}
-.primary:disabled{opacity:.5}
-/* week */
-.bars{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:110px}
-.bar{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
-.bar i{display:block;width:100%;border-radius:5px 5px 2px 2px;background:var(--accent);min-height:2px}
-.bar i.plan{background:transparent}
-.bar .col{position:relative;width:100%;flex:1;display:flex;align-items:flex-end}
-.bar .col em{position:absolute;left:0;right:0;border-top:2px dashed var(--muted);opacity:.6}
-.bar span{font-size:11px;color:var(--muted)}
-.bar span.today{color:var(--fg);font-weight:700}
-.legend{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);gap:8px;flex-wrap:wrap}
-/* checkpoints */
-.cps{display:flex;flex-direction:column;gap:8px}
-.cp{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--track);border:2px solid var(--line)}
-.dot.done{background:var(--good);border-color:var(--good)}
-.dot.miss{background:var(--warn);border-color:var(--warn)}
-/* history */
-.hist{display:flex;flex-direction:column}
-.item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.item:first-child{border-top:0}
-.item .what{display:flex;flex-direction:column;min-width:0}
-.item .what small{color:var(--muted);font-size:12px}
-.item .sum{font-weight:700}
-.item .sum.neg{color:var(--warn)}
-.del{border:0;background:transparent;color:var(--muted);font:600 13px var(--f-body);cursor:pointer;padding:6px}
-.del.armed{color:var(--accent)}
-.empty{color:var(--muted);font-size:14px;padding:6px 0}
-details summary{cursor:pointer;font-weight:600;font-size:14px}
-details .row{margin-top:10px}
-.note{font-size:12px;color:var(--muted)}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:5}
-@media (prefers-reduced-motion:no-preference){#arc{transition:stroke-dashoffset .6s ease}}
-</style>
-
-<div class="app">
-  <div class="top">
-    <h1>Копилка на мотоцикл</h1>
-    <small id="todayLbl" class="num"></small>
-  </div>
-  <div class="app-actions"><button type="button" id="installBtn" hidden>Установить приложение</button><span id="offlineState" aria-live="polite">● Данные сохраняются на этом устройстве</span></div>
-
-  <section class="panel" aria-label="Прогресс">
-    <div class="gauge">
-      <svg viewBox="0 0 300 175" role="img" aria-label="Шкала накоплений">
-        <path d="M30 160 A120 120 0 0 1 270 160" fill="none" stroke="var(--track)" stroke-width="18" stroke-linecap="round"/>
-        <path id="redline" d="M245.6 89.5 A120 120 0 0 1 270 160" fill="none" stroke="var(--accent-soft)" stroke-width="18"/>
-        <path id="arc" d="M30 160 A120 120 0 0 1 270 160" fill="none" stroke="var(--accent)" stroke-width="18" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
-        <line id="planTick" x1="0" y1="0" x2="0" y2="0" stroke="var(--fg)" stroke-width="3" stroke-linecap="round"/>
-        <g font-family="Manrope,system-ui,sans-serif" font-size="11" fill="var(--muted)" text-anchor="middle">
-          <text x="30" y="174">0</text><text x="150" y="27" id="gMid">300к</text><text x="270" y="174" id="gMax">600к</text>
-        </g>
-      </svg>
-      <div class="gauge-read">
-        <div class="big num" id="total">0 ₽</div>
-        <div class="sub num" id="pct">0% из 600 000 ₽ · тыс. ₽ на шкале</div>
-      </div>
-    </div>
-    <div class="status idle" id="status">Загружаю данные…</div>
-    <div class="stats">
-      <div class="stat"><b class="num" id="sLeft">—</b><span>осталось</span></div>
-      <div class="stat"><b class="num" id="sDay">—</b><span>нужно в рабочий день</span></div>
-      <div class="stat"><b class="num" id="sRate">—</b><span>средний ₽/час</span></div>
-    </div>
-  </section>
-
-  <section class="panel" aria-labelledby="addH">
-    <h2 id="addH">Добавить</h2>
-    <form id="form">
-      <div class="seg" role="group" aria-label="Тип записи">
-        <button type="button" data-kind="delivery" aria-pressed="true">Доставка</button>
-        <button type="button" data-kind="other" aria-pressed="false">Другое</button>
-        <button type="button" data-kind="spent" aria-pressed="false">Потратил</button>
-      </div>
-      <label class="amount">Сумма, ₽<input id="fAmount" inputmode="numeric" placeholder="например, 7000" autocomplete="off"></label>
-      <div class="quick" id="quick">
-        <button type="button" data-v="1500">+1 500</button><button type="button" data-v="3000">+3 000</button>
-        <button type="button" data-v="5000">+5 000</button><button type="button" data-v="7000">+7 000</button>
-      </div>
-      <div class="row">
-        <label>Дата<input id="fDate" type="date"></label>
-        <label id="hoursWrap">Часы<input id="fHours" inputmode="decimal" placeholder="10"></label>
-      </div>
-      <label>Заметка<input id="fNote" placeholder="снег, коэффициент x1.5" autocomplete="off"></label>
-      <button class="primary" id="fSave" type="submit">Сохранить</button>
-    </form>
-  </section>
-
-  <section class="panel" aria-labelledby="weekH">
-    <div class="legend"><h2 id="weekH">Эта неделя</h2><span class="num" id="weekSum"></span></div>
-    <div class="bars" id="bars"></div>
-    <div class="legend"><span>Столбик — заработано</span><span>Пунктир — план дня</span></div>
-  </section>
-
-  <section class="panel" aria-labelledby="cpH">
-    <h2 id="cpH">Контрольные точки</h2>
-    <div class="cps" id="cps"></div>
-  </section>
-
-  <section class="panel" aria-labelledby="hH">
-    <h2 id="hH">История</h2>
-    <div class="hist" id="hist"></div>
-  </section>
-
-  <section class="panel">
-    <details>
-      <summary>Настройки цели и резервная копия</summary>
-      <div class="row">
-        <label>Цель, ₽<input id="sGoal" inputmode="numeric"></label>
-        <label>Уже отложено, ₽<input id="sStart" inputmode="numeric"></label>
-      </div>
-      <p class="note" id="storeNote">План: 1–28 декабря, 29–31 декабря (праздники), январь–март. Срок — 31 марта 2027.</p>
-      <div class="backup-actions"><button type="button" id="exportBtn">Скачать резервную копию</button><button type="button" id="importBtn">Восстановить из копии</button><input id="importFile" type="file" accept="application/json,.json" hidden></div>
-      <p class="note">Записи хранятся локально в браузере. Регулярно скачивай копию, чтобы не потерять накопления при очистке данных браузера.</p>
-    </details>
-  </section>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light;--bg:#f3f4f6;--panel:#fff;--panel2:#f7f7f8;--fg:#17191e;--muted:#737985;--line:#e5e7eb;--accent:#e34d37;--green:#16845b;--red:#c44c42}
+:root[data-theme=dark]{color-scheme:dark;--bg:#101216;--panel:#191d24;--panel2:#20252e;--fg:#f3f4f6;--muted:#a0a7b4;--line:#2b313b;--accent:#ff644d;--green:#56c997;--red:#ff8275}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);padding:env(safe-area-inset-top) 14px calc(90px + env(safe-area-inset-bottom));transition:.2s}.app{max-width:720px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;padding:18px 2px}.brand{display:flex;align-items:center;gap:10px}.logo{width:42px;height:42px;border-radius:14px;background:var(--accent);display:grid;place-items:center;color:white;font-size:22px;font-weight:800}.brand h1{font-size:19px;margin:0}.brand small{color:var(--muted)}button,input,select,textarea{font:inherit}button{cursor:pointer}.icon{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:12px;padding:10px}.page{display:none}.page.active{display:block}.hero{background:linear-gradient(135deg,#292f3c,#151922);color:white;border-radius:23px;padding:23px}.hero small{color:#c4c9d3}.total{font-size:clamp(34px,8vw,48px);font-weight:850;letter-spacing:-1px;margin:9px 0}.goal{color:#c4c9d3;font-size:13px}.progress{height:9px;background:#ffffff28;border-radius:20px;margin:20px 0 9px;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,#ff987b,#ed503a);border-radius:20px}.meta{display:flex;justify-content:space-between;font-size:12px;color:#ddd}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:15px}.stat small{display:block;color:var(--muted);font-size:11px}.stat b{display:block;margin-top:7px;font-size:clamp(13px,3.5vw,18px)}.status{padding:12px;border-radius:12px;background:#16845b18;color:var(--green);font-size:13px;font-weight:650;margin-top:12px}.status.behind{background:#c47a1818;color:#b97820}.status.neutral{background:var(--panel2);color:var(--muted)}.head{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 10px}.head h2{font-size:15px;margin:0}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);text-align:left;font-weight:700}.action.primary,.primary{background:var(--accent);color:white;border-color:var(--accent)}.action small{display:block;color:var(--muted);font-weight:400;margin-top:4px}.action.primary small{color:#ffe4df}.chart{height:155px;display:flex;align-items:end;gap:8px}.bar{height:100%;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:6px}.bar i{width:min(100%,34px);background:var(--accent);border-radius:7px 7px 3px 3px;min-height:3px}.bar span{font-size:10px;color:var(--muted)}.field{display:flex;flex-direction:column;gap:6px;margin:11px 0;font-size:12px;color:var(--muted)}.field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);color:var(--fg);font-size:15px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.seg{display:flex;gap:5px;padding:4px;background:var(--panel2);border-radius:12px}.seg button{flex:1;border:0;background:transparent;color:var(--muted);border-radius:9px;padding:9px 4px;font-size:12px}.seg button.on{background:var(--panel);color:var(--fg)}.primary{width:100%;border:0;border-radius:12px;padding:14px;font-weight:750}.entry{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}.entry:last-child{border:0}.entry .desc{flex:1;min-width:0}.entry b{font-size:13px}.entry small{display:block;color:var(--muted);font-size:11px;margin-top:3px}.sum{font-weight:750;font-size:13px;white-space:nowrap}.pos{color:var(--green)}.neg{color:var(--red)}.empty{text-align:center;color:var(--muted);padding:24px;font-size:13px}.nav{position:fixed;bottom:0;left:0;right:0;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center}.navin{width:100%;max-width:720px;display:grid;grid-template-columns:repeat(4,1fr)}.nav button{border:0;background:none;color:var(--muted);font-size:10px;padding:5px}.nav button b{display:block;font-size:19px}.nav button.active{color:var(--accent);font-weight:800}.chat{display:flex;flex-direction:column;gap:9px;max-height:42vh;overflow:auto;margin-bottom:10px}.bubble{padding:11px 13px;border-radius:14px;max-width:90%;font-size:13px;white-space:pre-wrap}.bubble.ai{background:var(--panel2);align-self:flex-start}.bubble.user{background:var(--accent);color:white;align-self:flex-end}.chatrow{display:flex;gap:7px}.chatrow textarea{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--panel2);color:var(--fg)}.hint{font-size:11px;color:var(--muted);line-height:1.5}.toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 15px;border-radius:30px;font-size:12px}
+@media(max-width:380px){.stat{padding:10px}.stat b{font-size:12px}.hero{padding:18px}}
+</style></head>
+<body><div class="app">
+<header class="top"><div class="brand"><div class="logo">₽</div><div><h1>KopilkaMoto</h1><small>Твоя мечта ближе каждый день</small></div></div><button class="icon" id="themeBtn">◐</button></header>
+<section class="page active" id="home">
+<div class="hero"><small>МОИ НАКОПЛЕНИЯ</small><div class="total" id="total">0 ₽</div><div class="goal" id="goalText">из 600 000 ₽</div><div class="progress"><span id="fill" style="width:0%"></span></div><div class="meta"><span id="pct">0%</span><span id="left">Осталось 600 000 ₽</span></div></div>
+<div class="stats"><div class="stat"><small>Нужно в день</small><b id="perDay">—</b></div><div class="stat"><small>Доход/час</small><b id="perHour">—</b></div><div class="stat"><small>До цели</small><b id="daysLeft">—</b></div></div><div class="status neutral" id="status">Добавь первую запись.</div>
+<div class="head"><h2>Быстрое действие</h2></div><div class="actions"><button class="action primary" data-go="add">＋ Добавить доход<small>Доставка или подработка</small></button><button class="action" data-go="add" data-kind="spent">− Записать расход<small>Учесть трату из копилки</small></button></div>
+<div class="head"><h2>Динамика за 7 дней</h2><span id="weekTotal" class="hint"></span></div><div class="card"><div class="chart" id="chart"></div></div>
+<div class="head"><h2>Последние операции</h2><button class="icon" data-go="history">Вся история</button></div><div class="card" id="recent"></div></section>
+<section class="page" id="add"><div class="head"><h2>Новая операция</h2></div><div class="card"><div class="seg" id="kinds"><button class="on" data-kind="delivery">Доставка</button><button data-kind="other">Доход</button><button data-kind="spent">Расход</button></div>
+<label class="field">Сумма, ₽<input id="amount" type="number" min="1" placeholder="Например, 5000"></label><div class="grid"><label class="field">Дата<input id="date" type="date"></label><label class="field" id="hoursWrap">Часы работы<input id="hours" type="number" min="0" step=".5" placeholder="8"></label></div><label class="field">Комментарий<input id="note" maxlength="100" placeholder="Смена, бонус, ремонт..."></label><div class="grid"><button class="icon" data-amount="1500">+1 500 ₽</button><button class="icon" data-amount="3000">+3 000 ₽</button><button class="icon" data-amount="5000">+5 000 ₽</button><button class="icon" data-amount="7000">+7 000 ₽</button></div><button class="primary" id="saveEntry" style="margin-top:12px">Сохранить операцию</button></div></section>
+<section class="page" id="history"><div class="head"><h2>История операций</h2><span id="count" class="hint"></span></div><div class="card" id="list"></div></section>
+<section class="page" id="ai"><div class="head"><h2>ChatGPT-помощник</h2><span class="hint">AI</span></div><div class="card"><div class="chat" id="chat"><div class="bubble ai">Привет! Я помогу проанализировать накопления и составить план. Для подключения укажи URL защищённого API-прокси в настройках.</div></div><div class="chatrow"><textarea id="question" rows="2" placeholder="Как быстрее накопить?"></textarea><button class="primary" id="send" style="width:52px">➤</button></div><p class="hint">API-ключ OpenAI хранится только на сервере, не в приложении.</p></div></section>
+<section class="page" id="settings"><div class="head"><h2>Настройки</h2></div><div class="card"><div class="grid"><label class="field">Цель, ₽<input id="goalInput" type="number" min="1"></label><label class="field">Уже отложено, ₽<input id="startInput" type="number" min="0"></label></div><button class="primary" id="saveSettings">Сохранить цель</button></div><div class="head"><h2>Тема</h2></div><div class="card"><label class="field">Оформление<select id="theme"><option value="auto">Автоматически</option><option value="light">Светлая</option><option value="dark">Тёмная</option></select></label></div><div class="head"><h2>ChatGPT API</h2></div><div class="card"><label class="field">URL защищённого прокси<input id="apiUrl" type="url" placeholder="https://your-worker.workers.dev"></label><button class="primary" id="saveApi">Сохранить адрес</button><p class="hint">Не вставляй сюда секретный ключ OpenAI. Нужен только URL прокси.</p></div><div class="head"><h2>Резервная копия</h2></div><div class="card"><div class="grid"><button class="icon" id="export">Скачать JSON</button><button class="icon" id="import">Восстановить JSON</button><input id="file" type="file" accept=".json,application/json" hidden></div><button class="icon" id="install" hidden style="width:100%;margin-top:10px">Установить приложение</button><p class="hint">Данные хранятся только в этом браузере. Скачивай копию перед очисткой данных или сменой телефона.</p></div></section>
 </div>
-<div class="toast" id="toast" hidden></div>
-
+<nav class="nav"><div class="navin"><button class="active" data-page="home"><b>⌂</b>Главная</button><button data-page="add"><b>＋</b>Добавить</button><button data-page="history"><b>▤</b>История</button><button data-page="ai"><b>✦</b>AI</button><button data-page="settings"><b>⚙</b>Настройки</button></div></nav><div id="toast" class="toast" hidden></div>
 <script>
-(function(){
-  const BASE_GOAL = 600000;
-  // plan phases from the agreed plan (sums to 600k)
-  const PHASES = [
-    {from:'2026-12-01', to:'2026-12-28', amount:70000},
-    {from:'2026-12-29', to:'2026-12-31', amount:20000},
-    {from:'2027-01-01', to:'2027-03-31', amount:510000}
-  ];
-  const DEADLINE = '2027-03-31';
-  const CHECKS = [['2026-12-31','31 декабря'],['2027-01-31','1 февраля'],['2027-02-28','1 марта'],['2027-03-31','1 апреля']];
-  const KIND = {delivery:'Доставка', other:'Другое', spent:'Потратил'};
-  const DAY = 864e5;
-
-  const $ = id => document.getElementById(id);
-  const pd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
-  const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  const days = (a,b) => Math.round((pd(b)-pd(a))/DAY);
-  const rub = n => Math.round(n).toLocaleString('ru-RU') + ' ₽';
-  const k = n => (Math.round(n/100)/10).toLocaleString('ru-RU') + 'к';
-  const todayIso = () => iso(new Date());
-  const fmtDate = s => pd(s).toLocaleDateString('ru-RU',{day:'numeric',month:'short',weekday:'short'});
-
-  let entries = {};          // id -> {date, amount, hours, kind, note, ts}
-  let settings = {goal:BASE_GOAL, start:0};
-  let kind = 'delivery';
-  let store = null;          // {col, settingsRef} for db mode
-  let local = false;
-
-  // plan cumulative (earned part only, excluding start balance) at end of day s
-  function planAt(s){
-    const scale = Math.max(0, settings.goal - settings.start) / BASE_GOAL;
-    let sum = 0;
-    for (const p of PHASES){
-      const len = days(p.from, p.to) + 1;
-      const done = Math.min(len, Math.max(0, days(p.from, s) + 1));
-      sum += p.amount * done / len;
-    }
-    return sum * scale;
-  }
-  const signed = e => e.kind === 'spent' ? -Math.abs(e.amount) : e.amount;
-  function earnedUntil(s){ let t = 0; for (const e of Object.values(entries)) if (e.date <= s) t += signed(e); return t; }
-
-  function render(){
-    const t = todayIso();
-    $('todayLbl').textContent = pd(t).toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
-    const list = Object.entries(entries).map(([id,e]) => ({id, ...e}));
-    const earned = list.reduce((a,e) => a + signed(e), 0);
-    const total = settings.start + earned;
-    const goal = settings.goal || BASE_GOAL;
-    const pct = Math.max(0, Math.min(100, total/goal*100));
-    $('total').textContent = rub(total);
-    $('pct').textContent = pct.toFixed(1).replace('.',',') + '% из ' + rub(goal);
-    $('arc').setAttribute('stroke-dashoffset', String(100 - pct));
-    $('gMid').textContent = Math.round(goal/2000) + 'к'; $('gMax').textContent = Math.round(goal/1000) + 'к';
-
-    // plan tick on gauge
-    const planTotal = settings.start + planAt(t);
-    const pf = Math.max(0, Math.min(1, planTotal/goal));
-    const ang = Math.PI * (1 - pf), cx = 150, cy = 160;
-    const tick = $('planTick');
-    tick.setAttribute('x1', cx + 104*Math.cos(ang)); tick.setAttribute('y1', cy - 104*Math.sin(ang));
-    tick.setAttribute('x2', cx + 136*Math.cos(ang)); tick.setAttribute('y2', cy - 136*Math.sin(ang));
-    tick.style.opacity = t < PHASES[0].from ? 0 : 1;
-
-    // status
-    const st = $('status');
-    const left = Math.max(0, goal - total);
-    if (total >= goal){ st.className='status ok'; st.textContent='Цель достигнута. Можно ехать к дилеру.'; }
-    else if (t < PHASES[0].from){ st.className='status idle'; st.textContent='План стартует 1 декабря. Пока можно продать лишнее на Авито.'; }
-    else if (t > DEADLINE){ st.className='status behind'; st.textContent='Срок прошёл, не хватает ' + rub(left) + '.'; }
-    else {
-      const diff = total - planTotal;
-      if (diff >= 0){ st.className='status ok'; st.textContent='Опережаешь план на ' + rub(diff); }
-      else { st.className='status behind'; st.textContent='Отстаёшь от плана на ' + rub(-diff) + ' (план на сегодня ' + rub(planTotal) + ')'; }
-    }
-    $('sLeft').textContent = k(left);
-    const from = t < PHASES[0].from ? PHASES[0].from : t;
-    const daysLeft = Math.max(1, days(from, DEADLINE) + 1);
-    const workDays = Math.max(1, Math.round(daysLeft * 6/7));
-    $('sDay').textContent = left > 0 && t <= DEADLINE ? rub(left/workDays) : '—';
-    const wh = list.filter(e => e.kind==='delivery' && e.hours > 0);
-    const hrs = wh.reduce((a,e)=>a+e.hours,0), inc = wh.reduce((a,e)=>a+e.amount,0);
-    $('sRate').textContent = hrs ? rub(inc/hrs) : '—';
-
-    // week bars (Mon–Sun)
-    const now = pd(t), dow = (now.getDay()+6)%7;
-    const mon = new Date(now); mon.setDate(now.getDate()-dow);
-    const wk = [];
-    for (let i=0;i<7;i++){ const d = new Date(mon); d.setDate(mon.getDate()+i); const s = iso(d);
-      const prev = new Date(d); prev.setDate(d.getDate()-1);
-      const got = list.filter(e=>e.date===s && e.kind!=='spent').reduce((a,e)=>a+e.amount,0);
-      wk.push({s, got, plan: planAt(s) - planAt(iso(prev)), label: d.toLocaleDateString('ru-RU',{weekday:'short'})}); }
-    const max = Math.max(1, ...wk.map(w=>Math.max(w.got, w.plan)));
-    $('bars').innerHTML = wk.map(w => `<div class="bar"><div class="col">${w.plan>0?`<em style="bottom:${w.plan/max*100}%"></em>`:''}<i style="height:${w.got/max*100}%"></i></div><span class="${w.s===t?'today':''}">${w.label}</span></div>`).join('');
-    const wGot = wk.reduce((a,w)=>a+w.got,0), wPlan = wk.reduce((a,w)=>a+w.plan,0);
-    $('weekSum').textContent = rub(wGot) + (wPlan>0 ? ' из ' + rub(wPlan) : '');
-
-    // checkpoints
-    $('cps').innerHTML = CHECKS.map(([d,lbl]) => {
-      const target = settings.start + planAt(d);
-      const have = settings.start + earnedUntil(d);
-      const cls = t > d ? (have >= target ? 'done' : 'miss') : (total >= target ? 'done' : '');
-      return `<div class="cp"><span class="dot ${cls}"></span><span>${lbl}</span><b class="num">${rub(target)}</b></div>`;
-    }).join('');
-
-    // history
-    list.sort((a,b) => a.date===b.date ? (b.ts||0)-(a.ts||0) : (a.date < b.date ? 1 : -1));
-    const h = $('hist');
-    if (!list.length){ h.innerHTML = '<p class="empty">Записей пока нет. Добавь первую смену выше — сумму можно взять из приложения курьера.</p>'; return; }
-    h.innerHTML = list.slice(0,60).map(e =>
-      `<div class="item"><div class="what"><span>${KIND[e.kind]||'Запись'}</span><small data-id="${e.id}"></small></div><span class="sum num ${e.kind==='spent'?'neg':''}">${e.kind==='spent'?'−':'+'}${rub(e.amount)}</span><button class="del" data-id="${e.id}" aria-label="Удалить запись">✕</button></div>`
-    ).join('');
-    // fill user text safely
-    list.slice(0,60).forEach(e => {
-      const el = h.querySelector(`small[data-id="${e.id}"]`);
-      if (el) el.textContent = [fmtDate(e.date), e.hours ? (String(e.hours).replace('.',',')+' ч · '+rub(e.amount/e.hours)+'/ч') : '', e.note||''].filter(Boolean).join(' · ');
-    });
-  }
-
-  function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,1800); }
-
-  // ---------- storage ----------
-  const LS = 'moto-tracker-v1';
-  function lsLoad(){ try{ const o = JSON.parse(localStorage.getItem(LS)||'{}'); entries = o.entries||{}; if (o.settings) settings = {...settings, ...o.settings}; }catch(e){} }
-  function lsSave(){ try{ localStorage.setItem(LS, JSON.stringify({entries, settings})); }catch(e){} }
-  function useLocal(){
-    if (store || local) return;
-    local = true; lsLoad();
-    $('storeNote').textContent += ' Данные сейчас хранятся только в этом браузере.';
-    fillSettings(); render();
-  }
-
-  async function addEntry(e){
-    const id = 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-    entries[id] = e; render();
-    if (store){ try { await store.col.doc(id).set(e); } catch(err){ delete entries[id]; render(); toast('Не сохранилось, попробуй ещё раз'); return; } }
-    else lsSave();
-    toast('Сохранено');
-  }
-  async function removeEntry(id){
-    const old = entries[id]; delete entries[id]; render();
-    if (store){ try { await store.col.doc(id).delete(); } catch(err){ entries[id]=old; render(); toast('Не удалилось'); } }
-    else lsSave();
-  }
-  let setTimer = null;
-  function saveSettings(){
-    clearTimeout(setTimer);
-    setTimer = setTimeout(async () => {
-      if (store){ try { await store.col.doc('_settings').set({goal:settings.goal, start:settings.start}); } catch(e){ toast('Настройки не сохранились'); } }
-      else lsSave();
-    }, 600);
-  }
-  function fillSettings(){ $('sGoal').value = settings.goal; $('sStart').value = settings.start || ''; }
-
-  (async () => {
-    const fallback = setTimeout(useLocal, 10000);
-    try {
-      const claude = window.claude;
-      if (!claude || !claude.use){ clearTimeout(fallback); useLocal(); return; }
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-      if (!db || !user){ clearTimeout(fallback); useLocal(); return; }
-      const uid = await user.id();
-      if (!uid){ clearTimeout(fallback); useLocal(); return; }
-      const col = db.collection('data/users/' + uid);
-      col.onSnapshot(snap => {
-        clearTimeout(fallback);
-        if (local) return;
-        store = {col};
-        const next = {};
-        for (const d of snap.docs){
-          const v = d.data(); if (!v) continue;
-          if (d.id === '_settings'){ settings = {goal: Number(v.goal)||BASE_GOAL, start: Number(v.start)||0}; continue; }
-          next[d.id] = v;
-        }
-        entries = next;
-        if (document.activeElement !== $('sGoal') && document.activeElement !== $('sStart')) fillSettings();
-        render();
-      }, () => { clearTimeout(fallback); useLocal(); });
-    } catch(e){ clearTimeout(fallback); useLocal(); }
-  })();
-
-  // ---------- UI ----------
-  $('fDate').value = todayIso();
-  document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
-    kind = b.dataset.kind;
-    document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
-    $('hoursWrap').hidden = kind !== 'delivery';
-    $('fAmount').placeholder = kind==='spent' ? 'сколько взял из копилки' : kind==='other' ? 'например, продал на Авито' : 'например, 7000';
-  }));
-  $('quick').addEventListener('click', ev => { const v = ev.target.dataset && ev.target.dataset.v; if (v){ $('fAmount').value = (Number($('fAmount').value.replace(/\D/g,''))||0) + Number(v); } });
-  $('form').addEventListener('submit', ev => {
-    ev.preventDefault();
-    const amount = Number($('fAmount').value.replace(/\s/g,'').replace(',','.'));
-    if (!(amount > 0)){ toast('Введи сумму'); $('fAmount').focus(); return; }
-    const hours = kind==='delivery' ? Number(($('fHours').value||'').replace(',','.')) || 0 : 0;
-    addEntry({date: $('fDate').value || todayIso(), amount: Math.round(amount), hours, kind, note: $('fNote').value.trim().slice(0,80), ts: Date.now()});
-    $('fAmount').value=''; $('fHours').value=''; $('fNote').value='';
-  });
-  $('hist').addEventListener('click', ev => {
-    const b = ev.target.closest('.del'); if (!b) return;
-    if (b.classList.contains('armed')) removeEntry(b.dataset.id);
-    else { b.classList.add('armed'); b.textContent = 'Удалить?'; setTimeout(() => { if (b.isConnected){ b.classList.remove('armed'); b.textContent='✕'; } }, 3000); }
-  });
-  ['sGoal','sStart'].forEach(id => $(id).addEventListener('input', () => {
-    settings.goal = Number($('sGoal').value.replace(/\D/g,'')) || BASE_GOAL;
-    settings.start = Number($('sStart').value.replace(/\D/g,'')) || 0;
-    render(); saveSettings();
-  }));
-  fillSettings(); render();
-
-  // ---------- Резервная копия ----------
-  $('exportBtn').addEventListener('click', () => {
-    const payload = {app:'moto-savings-tracker', version:1, exportedAt:new Date().toISOString(), entries, settings};
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'kopilka-na-motocikl-backup-' + todayIso() + '.json';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast('Резервная копия скачана');
-  });
-  $('importBtn').addEventListener('click', () => $('importFile').click());
-  $('importFile').addEventListener('change', async ev => {
-    const file = ev.target.files && ev.target.files[0];
-    if (!file) return;
-    try {
-      const data = JSON.parse(await file.text());
-      if (!data || typeof data !== 'object' || !data.entries || typeof data.entries !== 'object' ||
-          !data.settings || !Number.isFinite(Number(data.settings.goal))) throw new Error('bad backup');
-      if (!confirm('Заменить текущие записи и настройки данными из резервной копии?')) return;
-      const clean = {};
-      for (const [id,e] of Object.entries(data.entries)) {
-        if (!e || !/^\\d{4}-\\d{2}-\\d{2}$/.test(e.date) ||
-            !Number.isFinite(Number(e.amount)) || Number(e.amount) <= 0 ||
-            !['delivery','other','spent'].includes(e.kind)) continue;
-        clean[String(id)] = {date:e.date, amount:Number(e.amount), hours:Number(e.hours)||0,
-          kind:e.kind, note:String(e.note||'').slice(0,80), ts:Number(e.ts)||Date.now()};
-      }
-      entries = clean;
-      settings = {goal:Math.max(1,Number(data.settings.goal)||600000), start:Math.max(0,Number(data.settings.start)||0)};
-      fillSettings(); render(); lsSave(); toast('Копия восстановлена');
-    } catch(err) { toast('Не удалось прочитать эту копию'); }
-    finally { ev.target.value=''; }
-  });
-
-  // ---------- Установка как приложения (PWA) ----------
-  let installPrompt = null;
-  const installBtn = $('installBtn');
-  window.addEventListener('beforeinstallprompt', ev => {
-    ev.preventDefault(); installPrompt = ev; installBtn.hidden = false;
-  });
-  installBtn.addEventListener('click', async () => {
-    if (!installPrompt) {
-      toast('Открой меню браузера и выбери «Установить приложение»');
-      return;
-    }
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    installPrompt = null; installBtn.hidden = true;
-  });
-  window.addEventListener('appinstalled', () => {
-    installBtn.hidden = true; toast('Приложение установлено');
-  });
-  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js')
-      .then(() => { $('offlineState').textContent = '● Работает офлайн'; })
-      .catch(() => { $('offlineState').textContent = '● Локальное сохранение включено'; }));
-  }
-
+(()=>{'use strict';
+const KEY='moto-tracker-v1',PREF='kopilkamoto-prefs-v2',BASE=600000,DEADLINE='2027-03-31';
+const PHASES=[['2026-12-01','2026-12-28',70000],['2026-12-29','2026-12-31',20000],['2027-01-01','2027-03-31',510000]];
+const $=id=>document.getElementById(id),iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),today=()=>iso(new Date()),dateObj=s=>{let p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])},days=(a,b)=>Math.round((dateObj(b)-dateObj(a))/86400000),rub=n=>Math.round(n||0).toLocaleString('ru-RU')+' ₽';
+let entries={},settings={goal:BASE,start:0},prefs={theme:'auto',apiUrl:''},kind='delivery',messages=[],installPrompt=null;
+function load(){try{let o=JSON.parse(localStorage.getItem(KEY)||'{}');entries=o.entries||{};settings={goal:Number(o.settings?.goal)||BASE,start:Number(o.settings?.start)||0}}catch(e){}try{prefs={...prefs,...JSON.parse(localStorage.getItem(PREF)||'{}')}}catch(e){}}
+function save(){localStorage.setItem(KEY,JSON.stringify({entries,settings}))}function savePrefs(){localStorage.setItem(PREF,JSON.stringify(prefs))}
+function signed(e){return e.kind==='spent'?-Math.abs(+e.amount):Math.abs(+e.amount)}function total(){return settings.start+Object.values(entries).reduce((a,e)=>a+signed(e),0)}
+function planAt(s){let n=0,scale=Math.max(0,settings.goal-settings.start)/BASE;PHASES.forEach(p=>{let len=days(p[0],p[1])+1,done=Math.min(len,Math.max(0,days(p[0],s)+1));n+=p[2]*done/len});return n*scale}
+function toast(s){let t=$('toast');t.textContent=s;t.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.hidden=true,2100)}
+function theme(){let t=prefs.theme==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):prefs.theme;document.documentElement.dataset.theme=t;$('theme').value=prefs.theme;$('themeBtn').textContent=t==='dark'?'☀':'☾'}
+function nav(p){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page===p));if(p==='history')history();if(p==='home')render()}
+function row(id,e){let spend=e.kind==='spent',title=e.note||(e.kind==='delivery'?'Доставка':spend?'Расход':'Другой доход');return '<div class="entry"><div class="desc"><b>'+title.replace(/[&<>]/g,'')+'</b><small>'+dateObj(e.date).toLocaleDateString('ru-RU')+(e.hours?' · '+e.hours+' ч':'')+'</small></div><span class="sum '+(spend?'neg':'pos')+'">'+(spend?'−':'+')+rub(e.amount)+'</span><button class="icon del" data-id="'+id+'">×</button></div>'}
+function history(){let a=Object.entries(entries).sort((x,y)=>y[1].date.localeCompare(x[1].date));$('count').textContent=a.length+' записей';$('list').innerHTML=a.length?a.map(x=>row(x[0],x[1])).join(''):'<div class="empty">Записей пока нет.</div>'}
+function render(){let t=today(),all=total(),left=Math.max(0,settings.goal-all),pct=Math.max(0,Math.min(100,all/settings.goal*100));$('total').textContent=rub(all);$('goalText').textContent='из '+rub(settings.goal);$('fill').style.width=pct+'%';$('pct').textContent=pct.toFixed(1)+'%';$('left').textContent='Осталось '+rub(left);
+let from=t<'2026-12-01'?'2026-12-01':t,remaining=Math.max(1,days(from,DEADLINE)+1);$('perDay').textContent=t<=DEADLINE&&left?rub(left/Math.max(1,Math.round(remaining*6/7))):'—';
+let ds=Object.values(entries).filter(e=>e.kind==='delivery'&&+e.hours>0),hrs=ds.reduce((a,e)=>a+(+e.hours),0),income=ds.reduce((a,e)=>a+(+e.amount),0);$('perHour').textContent=hrs?rub(income/hrs):'—';$('daysLeft').textContent=left?(t>DEADLINE?'Срок прошёл':remaining+' дн.'):'Цель!';
+let diff=all-(settings.start+planAt(t)),st=$('status');if(all>=settings.goal){st.className='status';st.textContent='🎉 Цель достигнута!'}else if(t<'2026-12-01'){st.className='status neutral';st.textContent='План накоплений стартует 1 декабря 2026 года.'}else if(t>DEADLINE){st.className='status behind';st.textContent='Срок плана прошёл. Осталось '+rub(left)}else if(diff>=0){st.className='status';st.textContent='Опережаешь план на '+rub(diff)}else{st.className='status behind';st.textContent='Отстаёшь от плана на '+rub(-diff)}
+let now=dateObj(t),mon=new Date(now);mon.setDate(now.getDate()-(now.getDay()+6)%7);let week=[],max=1,sum=0;for(let i=0;i<7;i++){let d=new Date(mon);d.setDate(mon.getDate()+i);let s=iso(d),v=Object.values(entries).filter(e=>e.date===s&&e.kind!=='spent').reduce((a,e)=>a+(+e.amount),0);week.push([s,v,d.toLocaleDateString('ru-RU',{weekday:'short'})]);max=Math.max(max,v);sum+=v}$('chart').innerHTML=week.map(w=>'<div class="bar"><i style="height:'+Math.max(3,w[1]/max*100)+'px"></i><span>'+w[2]+'</span></div>').join('');$('weekTotal').textContent=rub(sum);
+let recent=Object.entries(entries).sort((a,b)=>b[1].date.localeCompare(a[1].date)).slice(0,5);$('recent').innerHTML=recent.length?recent.map(x=>row(x[0],x[1])).join(''):'<div class="empty">Добавь первую операцию.</div>';history()}
+function setKind(k){kind=k;document.querySelectorAll('#kinds button').forEach(b=>b.classList.toggle('on',b.dataset.kind===k));$('hoursWrap').hidden=k!=='delivery'}
+function add(){let amount=Number($('amount').value),date=$('date').value||today();if(!(amount>0)){toast('Введи сумму больше нуля');return}let id='e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);entries[id]={date,amount:Math.round(amount),hours:kind==='delivery'?Number($('hours').value)||0:0,kind,note:$('note').value.trim().slice(0,100),ts:Date.now()};save();$('amount').value='';$('hours').value='';$('note').value='';toast('Сохранено');nav('home')}
+function backup(){let b=new Blob([JSON.stringify({app:'KopilkaMoto',version:2,entries,settings},null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='kopilkamoto-'+today()+'.json';a.click();URL.revokeObjectURL(u);toast('Копия скачана')}
+async function restore(f){try{let d=JSON.parse(await f.text());if(!d.entries||!d.settings||!confirm('Заменить текущие данные копией?'))return;let clean={};for(let [id,e] of Object.entries(d.entries)){if(e&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&+e.amount>0&&['delivery','other','spent'].includes(e.kind))clean[id]={...e,amount:+e.amount,hours:+e.hours||0}}entries=clean;settings={goal:Math.max(1,+d.settings.goal||BASE),start:Math.max(0,+d.settings.start||0)};save();$('goalInput').value=settings.goal;$('startInput').value=settings.start;render();toast('Копия восстановлена')}catch(e){toast('Ошибка файла копии')}}
+function bubble(role,text){let d=document.createElement('div');d.className='bubble '+role;d.textContent=text;$('chat').append(d);$('chat').scrollTop=$('chat').scrollHeight}
+async function ask(){let q=$('question').value.trim();if(!q)return;if(!prefs.apiUrl){toast('Укажи URL прокси в настройках');nav('settings');return}$('question').value='';bubble('user',q);messages.push({role:'user',content:q});$('send').disabled=true;try{let r=await fetch(prefs.apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:messages.slice(-12),context:{goal:settings.goal,balance:total(),remaining:Math.max(0,settings.goal-total()),currency:'RUB',transactions:Object.values(entries).slice(-80)}})});if(!r.ok)throw Error('HTTP '+r.status);let d=await r.json(),answer=d.reply||d.choices?.[0]?.message?.content||'Нет ответа';messages.push({role:'assistant',content:answer});bubble('ai',answer)}catch(e){bubble('ai','Не удалось подключиться к прокси. Проверь URL и настройки CORS. '+e.message)}finally{$('send').disabled=false}}
+$('date').value=today();$('saveEntry').onclick=add;$('kinds').onclick=e=>{let b=e.target.closest('[data-kind]');if(b)setKind(b.dataset.kind)};document.querySelectorAll('[data-amount]').forEach(b=>b.onclick=()=>$('amount').value=+$('amount').value+(+b.dataset.amount));document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>nav(b.dataset.page));document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{if(b.dataset.kind)setKind(b.dataset.kind);nav(b.dataset.go)});document.addEventListener('click',e=>{let b=e.target.closest('.del');if(b&&confirm('Удалить операцию?')){delete entries[b.dataset.id];save();render()}});$('saveSettings').onclick=()=>{settings.goal=Math.max(1,+$('goalInput').value||BASE);settings.start=Math.max(0,+$('startInput').value||0);save();render();toast('Цель сохранена')};$('themeBtn').onclick=()=>{prefs.theme=prefs.theme==='auto'?'dark':prefs.theme==='dark'?'light':'auto';savePrefs();theme()};$('theme').onchange=e=>{prefs.theme=e.target.value;savePrefs();theme()};$('saveApi').onclick=()=>{try{let u=$('apiUrl').value.trim();if(u&&new URL(u).protocol!=='https:')throw Error();prefs.apiUrl=u;savePrefs();toast('Адрес сохранён')}catch(e){toast('Нужен корректный HTTPS URL')}};$('export').onclick=backup;$('import').onclick=()=>$('file').click();$('file').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};$('send').onclick=ask;$('question').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}};
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('install').hidden=false});$('install').onclick=async()=>{if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$('install').hidden=true}else toast('Открой меню браузера → Установить приложение')};
+load();$('goalInput').value=settings.goal;$('startInput').value=settings.start;$('apiUrl').value=prefs.apiUrl;$('theme').value=prefs.theme;theme();render();matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if(prefs.theme==='auto')theme()});if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 })();
-</script>
-
-</body></html>
+</script></body></html>
