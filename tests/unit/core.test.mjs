@@ -286,3 +286,40 @@ test('форматирование денег', () => {
   assert.equal(core.formatCompact(25400), '25к');
   assert.equal(core.formatCompact(1250000), '1,3М');
 });
+
+test('темп и прогноз даты покупки', () => {
+  // 10 дней записей по 1000 ₽: окно 10 дней → 1000 ₽/день
+  const entries = {};
+  for (let i = 0; i < 10; i++) entries['d' + i] = e(core.addDays(T, -i), 1000);
+  const s = st(entries, { goal: 20000, deadline: '2026-11-30' });
+  assert.equal(core.savingPace(s.entries, T), 1000);
+  const f = core.forecast(s, T);
+  assert.deepEqual([f.status, f.days, f.date], ['ok', 10, '2026-11-25']);
+  assert.equal(f.lateDays, -5);
+  assert.match(core.forecastText(f), /раньше срока/);
+  // одна запись — окно минимум 7 дней
+  assert.equal(core.savingPace({ a: e(T, 700) }, T), 100);
+  // будущие даты не учитываются
+  assert.equal(core.savingPace({ a: e('2030-01-01', 700) }, T), null);
+  assert.equal(core.forecast(st({}), T).status, 'no-data');
+  assert.equal(core.forecast(st({ a: e(T, 100), b: e(T, 500, 'spent') }), T).status, 'no-progress');
+  assert.equal(core.forecast(st({ a: e(T, 200000) }), T).status, 'done');
+});
+
+test('замок: задержка покупки и подсчёт расходов', () => {
+  const entries = {};
+  for (let i = 0; i < 10; i++) entries['d' + i] = e(core.addDays(T, -i), 1000, 'delivery', { ts: 100 + i });
+  const s = st(entries);
+  assert.equal(core.delayDays(s, 2500, T), 3);
+  assert.equal(core.delayDays(st({}), 2500, T), null);
+  const w = core.withdrawals(
+    {
+      a: e(T, 300, 'spent', { ts: 50 }),
+      b: e(T, 200, 'spent', { ts: 200 }),
+      c: e(T, 999, 'delivery', { ts: 300 }),
+    },
+    100,
+  );
+  assert.deepEqual(w, { count: 1, sum: 200 });
+  assert.deepEqual(core.withdrawals({ a: e(T, 1, 'spent') }, 0), { count: 0, sum: 0 });
+});

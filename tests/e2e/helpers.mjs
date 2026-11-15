@@ -26,6 +26,8 @@ export async function setup({ root = '.' } = {}) {
         viewport: { width: 390, height: 844 },
         serviceWorkers: 'block',
         acceptDownloads: true,
+        // По умолчанию без анимаций — проверки детерминированы. Анимации проверяет motion.test.mjs.
+        reducedMotion: 'reduce',
         ...opts,
       });
     },

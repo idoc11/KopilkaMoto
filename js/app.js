@@ -1,10 +1,11 @@
 import * as core from './core.js';
 import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
+import { countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.1.0';
+const APP_VERSION = '6.2.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
-const THEME_COLORS = { light: '#f3f4f6', dark: '#101216' };
+const THEME_COLORS = { light: '#f1eee8', dark: '#141413' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
 
 const $ = (id) => document.getElementById(id);
@@ -85,6 +86,11 @@ const ui = {
   installPrompt: null,
   persistAsked: false,
   dataWarning: null,
+  shownTotal: 0,
+  shownPct: 0,
+  knownMarks: null,
+  flashId: null,
+  chartAnimate: true,
 };
 
 function cloneState(s = state) {
@@ -149,16 +155,41 @@ function announce(text) {
   setTimeout(() => (a.textContent = text), 50);
 }
 
-function confirmDialog({ title, text, ok = 'Подтвердить', danger = false }) {
+function confirmDialog({ title, text, ok = 'Подтвердить', danger = false, delay = 0 }) {
   const dlg = $('dialog');
+  const okBtn = $('dialogOk');
   $('dialogTitle').textContent = title;
   $('dialogText').textContent = text;
-  $('dialogOk').textContent = ok;
+  okBtn.textContent = ok;
+  okBtn.disabled = false;
   dlg.classList.toggle('danger', danger);
   if (typeof dlg.showModal !== 'function') return Promise.resolve(window.confirm(`${title}\n\n${text}`));
   return new Promise((resolve) => {
+    let left = delay;
+    let timer = 0;
+    // Задержка перед подтверждением: время передумать (замок до цели).
+    if (left > 0) {
+      okBtn.disabled = true;
+      okBtn.textContent = `${ok} (${left})`;
+      timer = setInterval(() => {
+        left -= 1;
+        okBtn.textContent = left > 0 ? `${ok} (${left})` : ok;
+        if (left <= 0) {
+          okBtn.disabled = false;
+          clearInterval(timer);
+        }
+      }, 1000);
+    }
     dlg.returnValue = '';
-    dlg.addEventListener('close', () => resolve(dlg.returnValue === 'ok'), { once: true });
+    dlg.addEventListener(
+      'close',
+      () => {
+        clearInterval(timer);
+        okBtn.disabled = false;
+        resolve(dlg.returnValue === 'ok');
+      },
+      { once: true },
+    );
     dlg.showModal();
     $('dialogCancel').focus();
   });
@@ -209,11 +240,15 @@ function showPage(page, { focus = true } = {}) {
   if (page !== ui.page) ui.prevPage = ui.page;
   ui.page = page;
   for (const p of PAGES) $('page-' + p).hidden = p !== page;
+  replay($('page-' + page), 'enter', 400);
   for (const a of document.querySelectorAll('[data-nav]')) {
     if (a.dataset.nav === page) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
-  if (page === 'home') renderHome();
+  if (page === 'home') {
+    ui.chartAnimate = true;
+    renderHome();
+  }
   if (page === 'history') renderHistory();
   if (page === 'add') prepareForm();
   if (page === 'settings') renderSettings();
@@ -236,7 +271,7 @@ function entryItem(id, e) {
   const label = `${entryTitle(e)}, ${core.formatDate(e.date)}, ${sum}`;
   return h(
     'li',
-    { className: 'entry' },
+    { className: 'entry' + (ui.flashId === id ? ' flash' : ''), dataset: { id } },
     h(
       'div',
       { className: 'desc' },
@@ -263,7 +298,7 @@ function entryItem(id, e) {
           className: 'icon-btn',
           type: 'button',
           'aria-label': `Удалить: ${label}`,
-          onClick: () => deleteEntry(id),
+          onClick: (ev) => deleteEntry(id, ev.currentTarget.closest('.entry')),
         },
         icon('trash'),
       ),
@@ -276,10 +311,20 @@ function renderHome() {
   const s = core.computeSummary(state, t);
   const g = state.settings.goal;
   $('onboarding').hidden = !ui.showOnboarding;
-  $('total').textContent = core.formatRub(s.total);
+  countUp($('total'), ui.shownTotal, s.total, (v) => core.formatRub(Math.round(v)));
+  ui.shownTotal = s.total;
   $('goalText').textContent = `из ${core.formatRub(g)} к ${core.formatDate(state.settings.deadline)}`;
-  $('fill').style.width = s.pct + '%';
-  $('progress').style.setProperty('--p', s.pct + '%');
+  const road = $('progress');
+  if (s.pct > ui.shownPct + 0.05) replay(road, 'driving', 900);
+  ui.shownPct = s.pct;
+  // Двойной кадр — чтобы при первом показе мотоцикл выехал со старта, а не появился на месте.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      $('fill').style.width = s.pct + '%';
+      road.style.setProperty('--p', s.pct + '%');
+    }),
+  );
+  road.classList.toggle('finished', s.phase === 'done');
   const pctText = s.pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
   $('pct').textContent = pctText;
   const progress = $('progress');
@@ -295,8 +340,18 @@ function renderHome() {
   st.textContent =
     Object.keys(state.entries).length || s.phase === 'done' ? s.status.text : 'Записей пока нет.';
   if (!Object.keys(state.entries).length && s.phase !== 'done') st.className = 'status neutral';
+  $('forecast').textContent = core.forecastText(core.forecast(state, t));
+  const lockInfo = $('lockInfo');
+  lockInfo.hidden = !prefs.lock;
+  if (prefs.lock) {
+    const w = core.withdrawals(state.entries, prefs.lockSince);
+    lockInfo.textContent = w.count
+      ? `Замок включён. Из копилки брали ${w.count} раз на ${core.formatRub(w.sum)}.`
+      : 'Замок включён. Из копилки ничего не брали.';
+  }
 
-  renderChart(t);
+  renderChart(t, { animate: ui.chartAnimate });
+  ui.chartAnimate = false;
 
   const m = core.monthSummary(state.entries, t);
   $('monthIncome').textContent = core.formatRub(m.income);
@@ -306,11 +361,17 @@ function renderHome() {
   net.className = m.net < 0 ? 'neg' : 'pos';
 
   const a = core.achievements(state, t);
+  const unlocked = new Set(a.items.filter((x) => x.done).map((x) => x.title));
+  const fresh = ui.knownMarks ? [...unlocked].filter((x) => !ui.knownMarks.has(x)) : [];
+  ui.knownMarks = unlocked;
   $('achievements').replaceChildren(
     ...a.items.map((x) =>
       h(
         'li',
-        { className: 'mark ' + (x.done ? 'unlocked' : 'locked'), title: x.hint },
+        {
+          className: 'mark ' + (x.done ? 'unlocked' : 'locked') + (fresh.includes(x.title) ? ' fresh' : ''),
+          title: x.hint,
+        },
         icon('check'),
         x.title,
         h('span', { className: 'visually-hidden', text: x.done ? ' — есть' : ' — пока нет' }),
@@ -327,9 +388,11 @@ function renderHome() {
       : [h('li', { className: 'empty', text: 'Пусто. Нажми «Доход», когда закроешь первую смену.' })]),
   );
   renderBanners();
+  ui.flashId = null;
+  if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), 900);
 }
 
-function renderChart(t) {
+function renderChart(t, { animate = false } = {}) {
   const { days, total } = core.weekSeries(state.entries, t);
   $('weekTotal').textContent = core.formatSigned(total);
   const posMax = Math.max(0, ...days.map((d) => d.value));
@@ -338,10 +401,12 @@ function renderChart(t) {
   const zero = posMax || !negMax ? (posMax / range) * 100 : 0;
   const chart = $('chart');
   chart.style.setProperty('--zero', `${negMax || posMax ? zero : 100}%`);
+  chart.classList.toggle('animate', animate && !reducedMotion());
   if (!days.some((d) => d.date === ui.selectedDay)) ui.selectedDay = null;
   chart.replaceChildren(
     ...days.map((d) => {
       const fill = h('span', { className: 'bar-fill ' + (d.value < 0 ? 'neg' : 'pos') });
+      fill.style.animationDelay = `${days.indexOf(d) * 45}ms`;
       const share = (Math.abs(d.value) / range) * 100;
       if (d.value > 0) {
         fill.style.bottom = `${100 - zero}%`;
@@ -468,6 +533,7 @@ function renderSettings() {
   $('startDateInput').value = s.startDate;
   $('deadlineInput').value = s.deadline;
   $('apiUrl').value = prefs.apiUrl;
+  $('lockToggle').checked = prefs.lock;
   $('backupInfo').textContent = prefs.lastBackupAt
     ? `Последняя копия: ${formatAgo(prefs.lastBackupAt)}.`
     : 'Резервную копию ещё не скачивали.';
@@ -604,7 +670,7 @@ function editEntry(id) {
   go('add');
 }
 
-function submitEntry(ev) {
+async function submitEntry(ev) {
   ev.preventDefault();
   clearFormErrors();
   const t = today();
@@ -631,6 +697,23 @@ function submitEntry(ev) {
       return formError('hours', 'Часы работы — от 0 до 24 (например, 7,5).');
     }
   }
+  if (prefs.lock && ui.kind === 'spent' && !editing) {
+    const left = Math.max(0, state.settings.goal - core.balance(state));
+    const delay = core.delayDays(state, amount, t);
+    const lines = [
+      `До мотоцикла не хватает ${core.formatRub(left)}.`,
+      delay ? `Этот расход отодвинет покупку примерно на ${delay} дн.` : '',
+      'Если это не срочно — лучше отложить.',
+    ].filter(Boolean);
+    const sure = await confirmDialog({
+      title: `Взять ${core.formatRub(amount)} из копилки?`,
+      text: lines.join('\n'),
+      ok: 'Всё равно записать',
+      danger: true,
+      delay: 3,
+    });
+    if (!sure) return;
+  }
   const id = editing || core.newEntryId();
   const next = cloneState();
   next.entries[id] = {
@@ -643,11 +726,18 @@ function submitEntry(ev) {
   };
   if (!commit(next)) return;
   resetForm();
+  ui.flashId = id;
+  haptic();
   toast(editing ? 'Изменения сохранены' : 'Записано');
   go('home', { replace: true });
 }
 
-function deleteEntry(id) {
+function deleteEntry(id, row) {
+  if (!state.entries[id]) return;
+  leave(row, () => removeEntry(id));
+}
+
+function removeEntry(id) {
   const removed = state.entries[id];
   if (!removed) return;
   const next = cloneState();
@@ -662,6 +752,7 @@ function deleteEntry(id) {
       const back = cloneState();
       back.entries[id] = removed;
       if (commit(back)) {
+        ui.flashId = id;
         renderAll();
         toast('Запись возвращена');
       }
@@ -851,7 +942,18 @@ function renderChat({ pending = false, error = '' } = {}) {
             : 'Чтобы задавать вопросы, укажи адрес прокси в **Настройки → Помощник**.',
         ),
       ];
-  if (pending) items.push(h('div', { className: 'bubble typing', text: 'Думаю…', 'aria-busy': 'true' }));
+  if (pending) {
+    items.push(
+      h(
+        'div',
+        { className: 'bubble typing', 'aria-busy': 'true' },
+        h('span', { className: 'visually-hidden', text: 'Помощник печатает' }),
+        h('span', { className: 'dot', 'aria-hidden': 'true' }),
+        h('span', { className: 'dot', 'aria-hidden': 'true' }),
+        h('span', { className: 'dot', 'aria-hidden': 'true' }),
+      ),
+    );
+  }
   if (error) items.push(h('div', { className: 'bubble error', role: 'alert', text: error }));
   const box = $('chat');
   box.replaceChildren(...items);
@@ -1065,6 +1167,12 @@ function bind() {
   });
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => {
     if (prefs.theme === 'auto') applyTheme();
+  });
+  $('lockToggle').addEventListener('change', (e) => {
+    prefs.lock = e.target.checked;
+    prefs.lockSince = prefs.lock ? Date.now() : 0;
+    savePrefs();
+    toast(prefs.lock ? 'Замок включён' : 'Замок выключен');
   });
   $('export').addEventListener('click', exportBackup);
   $('import').addEventListener('click', () => $('file').click());

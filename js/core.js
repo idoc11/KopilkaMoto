@@ -474,6 +474,14 @@ export function buildAiContext(state, today) {
     planDifference: Math.round(s.diff),
     incomePerHour: s.perHour === null ? null : Math.round(s.perHour),
     thisMonth: month,
+    forecastDate: (() => {
+      const f = forecast(state, today);
+      return f.status === 'ok' ? f.date : null;
+    })(),
+    savingPacePerDay: (() => {
+      const p = savingPace(state.entries, today);
+      return p === null ? null : Math.round(p);
+    })(),
     transactionsTotal: sorted.length,
     transactions: sorted.slice(0, AI_MAX_TRANSACTIONS).map(([, e]) => ({
       date: e.date,
@@ -516,4 +524,76 @@ export function aiErrorMessage(status, serverMessage) {
     return 'Прокси не принимает запросы с этого сайта. Проверь ALLOWED_ORIGIN в настройках Worker.';
   if (status >= 500) return 'AI-сервис временно недоступен. Попробуй позже.';
   return `Прокси ответил ошибкой ${status}.`;
+}
+
+// ---------- Прогноз и замок ----------
+
+export const FORECAST_WINDOW_DAYS = 30;
+export const FORECAST_MIN_DAYS = 7;
+
+/**
+ * Темп накопления: чистый результат за последние 30 дней (или с начала записей, но не меньше 7 дней),
+ * делённый на число дней. Возвращает рубли в день или null, если данных мало.
+ */
+export function savingPace(entries, today) {
+  const list = Object.values(entries).filter((e) => e.date <= today);
+  if (!list.length) return null;
+  const first = list.reduce((m, e) => (e.date < m ? e.date : m), today);
+  const span = Math.min(FORECAST_WINDOW_DAYS, Math.max(FORECAST_MIN_DAYS, daysBetween(first, today) + 1));
+  const from = addDays(today, -(span - 1));
+  const net = list.filter((e) => e.date >= from).reduce((s, e) => s + signedAmount(e), 0);
+  return net / span;
+}
+
+/** Прогноз даты, когда при текущем темпе наберётся цель. */
+export function forecast(state, today) {
+  const left = state.settings.goal - balance(state);
+  if (left <= 0) return { status: 'done' };
+  const pace = savingPace(state.entries, today);
+  if (pace === null) return { status: 'no-data' };
+  if (pace <= 0) return { status: 'no-progress', pace };
+  const days = Math.ceil(left / pace);
+  if (days > 365 * 20) return { status: 'too-far', pace };
+  const date = addDays(today, days);
+  return { status: 'ok', pace, days, date, lateDays: daysBetween(state.settings.deadline, date) };
+}
+
+export function forecastText(f) {
+  switch (f.status) {
+    case 'done':
+      return 'Сумма уже набрана.';
+    case 'no-data':
+      return 'Прогноз появится после первых записей.';
+    case 'no-progress':
+      return 'За последние дни расходы съели доходы — при таком темпе цель не приближается.';
+    case 'too-far':
+      return 'При текущем темпе на цель уйдёт больше 20 лет.';
+    default: {
+      const when = formatDate(f.date);
+      if (f.lateDays > 0) return `При текущем темпе — ${when}, на ${f.lateDays} дн. позже срока.`;
+      if (f.lateDays < 0) return `При текущем темпе — ${when}, на ${-f.lateDays} дн. раньше срока.`;
+      return `При текущем темпе — ${when}, ровно в срок.`;
+    }
+  }
+}
+
+/** На сколько дней расход отодвинет покупку при текущем темпе. null — темп неизвестен или нулевой. */
+export function delayDays(state, amount, today) {
+  const pace = savingPace(state.entries, today);
+  if (!pace || pace <= 0) return null;
+  return Math.max(1, Math.ceil(amount / pace));
+}
+
+/** Расходы с момента включения замка. */
+export function withdrawals(entries, sinceTs) {
+  if (!sinceTs) return { count: 0, sum: 0 };
+  let count = 0;
+  let sum = 0;
+  for (const e of Object.values(entries)) {
+    if (e.kind === 'spent' && e.ts >= sinceTs) {
+      count++;
+      sum += e.amount;
+    }
+  }
+  return { count, sum: roundMoney(sum) };
 }

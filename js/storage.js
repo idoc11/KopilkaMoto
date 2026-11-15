@@ -28,6 +28,8 @@ export function normalizePrefs(p) {
     lastBackupAt: num(src.lastBackupAt),
     changesSinceBackup: num(src.changesSinceBackup),
     snoozeUntil: num(src.snoozeUntil),
+    lock: src.lock === true,
+    lockSince: src.lock === true ? num(src.lockSince) || Date.now() : 0,
   };
 }
 
