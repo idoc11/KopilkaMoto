@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.5.1';
+const APP_VERSION = '6.6.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -389,6 +389,23 @@ function renderHome() {
   const net = $('monthNet');
   net.textContent = (m.net < 0 ? '−' : '') + core.formatRub(Math.abs(m.net));
   net.className = m.net < 0 ? 'neg' : 'pos';
+
+  const spend = core.spendingBreakdown(state.entries, t);
+  $('spendWrap').hidden = !spend.items.length;
+  $('spendList').replaceChildren(
+    ...spend.items.map((x) => {
+      const pct = Math.round(x.share * 100);
+      const bar = h('span', { className: 'spend-fill' });
+      bar.style.width = `${Math.max(2, x.share * 100)}%`;
+      return h(
+        'li',
+        {},
+        h('span', { className: 'spend-label', text: x.label }),
+        h('span', { className: 'spend-sum', text: `${core.formatRub(x.amount)} · ${pct}%` }),
+        h('span', { className: 'spend-bar', 'aria-hidden': 'true' }, bar),
+      );
+    }),
+  );
 
   const a = core.achievements(state, t);
   const unlocked = new Set(a.items.filter((x) => x.done).map((x) => x.title));

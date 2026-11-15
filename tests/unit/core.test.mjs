@@ -439,3 +439,31 @@ test('резервная копия переносит частые расход
     theme: 'auto',
   });
 });
+
+test('куда ушли деньги: расходы месяца по комментарию, крупные сверху, остальное в конце', () => {
+  const entries = {
+    a: e(T, 400, 'spent', { note: 'Еда' }),
+    b: e('2026-11-03', 400, 'spent', { note: ' еда ' }),
+    c: e(T, 100, 'spent', { note: 'Электричка' }),
+    d: e(T, 1500, 'spent', { note: 'Бензин' }),
+    f: e(T, 50, 'spent', { note: '' }),
+    g: e(T, 30, 'spent', { note: 'Жвачка' }),
+    h: e(T, 20, 'spent', { note: 'Вода' }),
+    old: e('2026-10-31', 9999, 'spent', { note: 'Еда' }),
+    inc: e(T, 5000),
+  };
+  const r = core.spendingBreakdown(entries, T, 4);
+  assert.deepEqual(
+    r.items.map((x) => [x.label, x.amount]),
+    [
+      ['Бензин', 1500],
+      ['Еда', 800],
+      ['Электричка', 100],
+      ['Без комментария', 50],
+      ['Остальное', 50],
+    ],
+  );
+  assert.equal(r.total, 2500);
+  assert.equal(r.items[0].share, 0.6);
+  assert.deepEqual(core.spendingBreakdown({ inc: e(T, 1) }, T).items, []);
+});

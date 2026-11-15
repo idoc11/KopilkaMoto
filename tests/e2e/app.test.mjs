@@ -558,3 +558,23 @@ test('переезд на новый телефон: копия переноси
   assert.equal(back.lock, false);
   await fresh.close();
 });
+
+test('«Куда ушли деньги»: расходы месяца по категориям на главной', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, {
+    storage: configured({
+      a: entry(today(), 400, 'spent', { note: 'Еда' }),
+      b: entry(today(), 100, 'spent', { note: 'Электричка' }),
+      c: entry(today(), 5000),
+    }),
+  });
+  assert.equal(await page.isVisible('#spendWrap'), true);
+  assert.deepEqual(await page.locator('#spendList .spend-label').allTextContents(), ['Еда', 'Электричка']);
+  assert.match(await page.textContent('#spendList li:first-child .spend-sum'), /400\s₽ · 80%/);
+  // одно нажатие частого расхода — разбивка обновилась
+  await page.click('#quickSpend [aria-label^="Записать расход: Электричка"]');
+  assert.match(await page.textContent('#spendList li:nth-child(2) .spend-sum'), /200\s₽ · 33%/);
+  const empty = await open(ctx, env.base, { storage: configured({ c: entry(today(), 5000) }) });
+  assert.equal(await empty.isVisible('#spendWrap'), false);
+  await ctx.close();
+});

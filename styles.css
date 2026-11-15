@@ -497,6 +497,42 @@ h2.page-title {
   min-height: 1.5em;
 }
 
+/* Куда ушли деньги */
+.spend {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.spend li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  font-size: 14px;
+}
+.spend-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.spend-sum {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.spend-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel2);
+  overflow: hidden;
+}
+.spend-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--red);
+  transition: width var(--t-move) ease;
+}
+
 /* Отметки */
 .marks {
   list-style: none;

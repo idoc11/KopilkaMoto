@@ -682,3 +682,32 @@ export function normalizePresets(list) {
   }
   return out;
 }
+
+// ---------- Куда ушли деньги ----------
+
+/** Расходы текущего месяца по комментарию (подпись — как в самой свежей записи): крупные сверху, хвост — в «Остальное». */
+export function spendingBreakdown(entries, today, limit = 4) {
+  const prefix = today.slice(0, 7);
+  const groups = new Map();
+  for (const e of sortEntries(entries)) {
+    if (e[1].kind !== 'spent' || !e[1].date.startsWith(prefix)) continue;
+    const label = e[1].note.trim() || 'Без комментария';
+    const key = label.toLowerCase();
+    const g = groups.get(key) || { label, amount: 0 };
+    g.amount += e[1].amount;
+    groups.set(key, g);
+  }
+  const sorted = [...groups.values()].sort((a, b) => b.amount - a.amount || a.label.localeCompare(b.label));
+  const total = roundMoney(sorted.reduce((s, g) => s + g.amount, 0));
+  const top = sorted.slice(0, limit);
+  const rest = sorted.slice(limit).reduce((s, g) => s + g.amount, 0);
+  if (rest > 0) top.push({ label: 'Остальное', amount: rest });
+  return {
+    total,
+    items: top.map((g) => ({
+      label: g.label,
+      amount: roundMoney(g.amount),
+      share: total ? g.amount / total : 0,
+    })),
+  };
+}
