@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.2.2';
+const APP_VERSION = '6.2.3';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -1286,7 +1286,39 @@ function bind() {
   });
 }
 
+/**
+ * Защита от кликджекинга: GitHub Pages не позволяет задать X-Frame-Options, а meta-CSP не поддерживает
+ * frame-ancestors. Во фрейме чужого сайта интерфейс не запускаем — только ссылка на открытие напрямую.
+ */
+function blockIfFramed() {
+  let framed;
+  try {
+    framed = window.top !== window.self;
+  } catch {
+    framed = true;
+  }
+  if (!framed) return false;
+  document.body.replaceChildren(
+    h(
+      'div',
+      { id: 'framed', className: 'framed' },
+      h('p', {
+        text: 'KopilkaMoto нельзя использовать внутри другого сайта. Чтобы вести копилку, открой её напрямую.',
+      }),
+      h('a', {
+        className: 'btn primary',
+        href: location.href,
+        target: '_top',
+        rel: 'noopener',
+        text: 'Открыть KopilkaMoto',
+      }),
+    ),
+  );
+  return true;
+}
+
 function init() {
+  if (blockIfFramed()) return;
   reportLoadProblems();
   setupOnboarding();
   bind();

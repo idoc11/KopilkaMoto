@@ -139,6 +139,13 @@ a {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.framed {
+  padding: 24px 16px;
+  display: grid;
+  gap: 16px;
+  max-width: 420px;
+  margin: auto;
+}
 .noscript {
   padding: 20px;
   text-align: center;

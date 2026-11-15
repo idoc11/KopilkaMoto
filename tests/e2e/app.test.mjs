@@ -388,3 +388,19 @@ test('удаление с клавиатуры: фокус переходит н
   assert.equal(await page.evaluate(() => document.activeElement.id), 'h-history');
   await ctx.close();
 });
+
+test('встраивание в чужой сайт (кликджекинг): приложение не запускается в рамке', async () => {
+  const ctx = await env.context();
+  const page = await ctx.newPage();
+  // «Чужой» сайт: тот же сервер, но другой источник (localhost ≠ 127.0.0.1)
+  env.overrides.set('/evil.html', `<iframe src="${env.base}" width="400" height="600"></iframe>`);
+  await page.goto(env.base.replace('127.0.0.1', 'localhost') + 'evil.html');
+  const frame = await (await page.waitForSelector('iframe')).contentFrame();
+  await frame.waitForLoadState('load');
+  await frame.waitForSelector('#framed', { timeout: 5000 });
+  assert.equal(await frame.locator('nav [data-nav]').count(), 0, 'интерфейс не должен быть доступен');
+  assert.match(await frame.textContent('#framed'), /открой/i);
+  assert.equal(await frame.getAttribute('#framed a', 'target'), '_top');
+  env.overrides.delete('/evil.html');
+  await ctx.close();
+});
