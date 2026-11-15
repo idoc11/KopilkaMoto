@@ -2,6 +2,7 @@
 
 import {
   CHAT_KEY,
+  MAX_RAW_COPIES,
   PREFS_KEY,
   RAW_PREFIX,
   STORAGE_KEY,
@@ -64,12 +65,35 @@ export function createStore(storage, { now = () => new Date() } = {}) {
     return keys.sort();
   }
 
-  /** Сохраняет исходную строку данных отдельно, если такой копии ещё нет. */
+  function remove(key) {
+    try {
+      storage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /**
+   * Сохраняет исходную строку данных отдельно, если такой копии ещё нет.
+   * Хранит не больше MAX_RAW_COPIES копий: иначе localStorage переполнится и перестанет сохраняться всё остальное.
+   * Если места нет — освобождает его за счёт самой старой копии и пробует ещё раз.
+   */
   function preserveRaw(raw) {
     const existing = rawKeys().find((k) => read(k) === raw);
     if (existing) return existing;
     const key = RAW_PREFIX + now().toISOString().replace(/[:.]/g, '-');
-    return write(key, raw) ? key : null;
+    let saved = write(key, raw);
+    if (!saved) {
+      const oldest = rawKeys()[0];
+      if (oldest) {
+        remove(oldest);
+        saved = write(key, raw);
+      }
+    }
+    if (!saved) return null;
+    const keys = rawKeys();
+    for (const k of keys.slice(0, Math.max(0, keys.length - MAX_RAW_COPIES))) remove(k);
+    return key;
   }
 
   function save(state) {
@@ -107,12 +131,7 @@ export function createStore(storage, { now = () => new Date() } = {}) {
     rawKeys,
     readRaw: read,
     removeRaw(key) {
-      if (!key.startsWith(RAW_PREFIX)) return;
-      try {
-        storage.removeItem(key);
-      } catch {
-        /* ignore */
-      }
+      if (key.startsWith(RAW_PREFIX)) remove(key);
     },
     loadPrefs() {
       try {

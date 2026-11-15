@@ -4,6 +4,8 @@ export const STORAGE_KEY = 'moto-tracker-v1';
 export const PREFS_KEY = 'kopilkamoto-prefs-v2';
 export const CHAT_KEY = 'kopilkamoto-chat-v1';
 export const RAW_PREFIX = 'moto-tracker-v1-raw-';
+/** Сколько последних копий исходных данных хранить (каждая — полный объём данных). */
+export const MAX_RAW_COPIES = 5;
 export const SCHEMA_VERSION = 2;
 export const BACKUP_VERSION = 6;
 export const APP_NAMES = ['KopilkaMoto', 'moto-savings-tracker'];

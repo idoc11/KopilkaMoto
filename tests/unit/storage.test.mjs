@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStore, normalizePrefs } from '../../js/storage.js';
-import { STORAGE_KEY, RAW_PREFIX } from '../../js/core.js';
+import { STORAGE_KEY, RAW_PREFIX, MAX_RAW_COPIES } from '../../js/core.js';
 
 function fakeStorage(init = {}, { failWrites = false } = {}) {
   const m = new Map(Object.entries(init));
@@ -83,4 +83,35 @@ test('чат: фильтрация мусора и ограничение дли
   const back = store.loadChat();
   assert.ok(back.length <= 40);
   assert.ok(back.every((m) => m.role !== 'system'));
+});
+
+test('копий исходных данных не больше лимита — старые удаляются, хранилище не переполняется', () => {
+  const s = fakeStorage();
+  let t = Date.UTC(2026, 10, 1);
+  const store = createStore(s, { now: () => new Date((t += 60_000)) });
+  for (let i = 0; i < 9; i++) store.preserveRaw(`{"copy":${i}}`);
+  const keys = store.rawKeys();
+  assert.equal(keys.length, MAX_RAW_COPIES);
+  // остались самые свежие
+  assert.equal(s.getItem(keys.at(-1)), '{"copy":8}');
+  assert.equal(s.getItem(keys[0]), `{"copy":${9 - MAX_RAW_COPIES}}`);
+});
+
+test('при переполнении хранилища освобождает место за счёт старых копий и повторяет запись', () => {
+  const s = fakeStorage({ [RAW_PREFIX + '2026-01-01']: 'old-1', [RAW_PREFIX + '2026-01-02']: 'old-2' });
+  const realSet = s.setItem;
+  let failOnce = true;
+  s.setItem = (k, v) => {
+    if (failOnce && k.startsWith(RAW_PREFIX)) {
+      failOnce = false;
+      throw new Error('QuotaExceededError');
+    }
+    realSet(k, v);
+  };
+  const store = createStore(s, { now });
+  const key = store.preserveRaw('fresh');
+  assert.ok(key, 'копия сохранена со второй попытки');
+  assert.equal(s.getItem(key), 'fresh');
+  assert.equal(s.getItem(RAW_PREFIX + '2026-01-01'), null, 'самая старая копия удалена');
+  assert.equal(s.getItem(RAW_PREFIX + '2026-01-02'), 'old-2');
 });
