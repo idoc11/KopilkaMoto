@@ -600,6 +600,42 @@ export function savingPace(entries, today) {
   return paceWindow(entries, today)?.pace ?? null;
 }
 
+/**
+ * Средний темп за весь период плана: от startDate до today.
+ * Операции до начала плана не учитываются.
+ */
+export function savingPaceOverall(entries, startDate, today) {
+  if (!startDate || today < startDate) return null;
+  const span = Math.max(1, daysBetween(startDate, today) + 1);
+  const net = Object.values(entries).filter((e) => e.date >= startDate && e.date <= today)
+    .reduce((sum, e) => sum + signedAmount(e), 0);
+  return net / span;
+}
+
+function forecastAtPace(left, pace, today, deadline, hasEntries = true) {
+  if (left <= 0) return { status: 'done' };
+  if (!hasEntries) return { status: 'no-data' };
+  if (pace <= 0) return { status: 'no-progress', pace };
+  const days = Math.ceil(left / pace);
+  if (days > 365 * 20) return { status: 'too-far', pace };
+  const date = addDays(today, days);
+  return { status: 'ok', pace, days, date, lateDays: daysBetween(deadline, date) };
+}
+
+/** Оба прогноза: по последним 30 дням и по всему периоду плана. */
+export function forecastBoth(state, today) {
+  const left = state.settings.goal - balance(state);
+  const recent = forecast(state, today);
+  const planStart = state.settings.startDate;
+  if (today < planStart) {
+    return { recent, overall: { status: 'not-started' } };
+  }
+  const overallPace = savingPaceOverall(state.entries, planStart, today);
+  const hasPlanEntries = Object.values(state.entries).some((e) => e.date >= planStart && e.date <= today);
+  const overall = forecastAtPace(left, overallPace ?? 0, today, state.settings.deadline, hasPlanEntries);
+  return { recent, overall };
+}
+
 /** Прогноз даты, когда при текущем темпе наберётся цель. */
 export function forecast(state, today) {
   const left = state.settings.goal - balance(state);
@@ -614,6 +650,18 @@ export function forecast(state, today) {
   if (days > 365 * 20) return { status: 'too-far', pace };
   const date = addDays(today, days);
   return { status: 'ok', pace, days, date, lateDays: daysBetween(state.settings.deadline, date) };
+}
+
+export function forecastBothText(state, today) {
+  const forecasts = forecastBoth(state, today);
+  const describe = (label, f) => {
+    if (f.status === 'not-started') return `${label}: расчёт начнётся ${formatDate(state.settings.startDate)}.`;
+    return `${label}: ${forecastText(f)}`;
+  };
+  return [
+    describe('За последние 30 дней', forecasts.recent),
+    describe('За весь период накопления', forecasts.overall),
+  ].join('\\n');
 }
 
 export function forecastText(f) {
