@@ -312,10 +312,8 @@ export function computeSummary(state, today) {
   else if (today < settings.startDate) phase = 'before';
   else phase = 'active';
 
-  // Цель по дням обновляется на лету в зависимости от остатка суммы и оставшихся дней
   const perDay = phase === 'done' ? 0 : phase === 'after' || !remainingDays ? null : left / remainingDays;
 
-  // Заработок в час на основе всех записей доставки, где указаны часы (> 0)
   const deliveries = Object.values(state.entries).filter((e) => e.kind === 'delivery' && e.hours > 0);
   const hours = deliveries.reduce((s, e) => s + e.hours, 0);
   const earned = deliveries.reduce((s, e) => s + e.amount, 0);
