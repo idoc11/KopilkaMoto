@@ -336,68 +336,108 @@ function renderHome() {
   const t = today();
   const s = core.computeSummary(state, t);
   const g = state.settings.goal;
-  
   $('onboarding').hidden = !ui.showOnboarding;
   countUp($('total'), ui.shownTotal, s.total, (v) => core.formatRub(Math.round(v)));
   ui.shownTotal = s.total;
-  
   $('goalText').textContent = `из ${core.formatRub(g)} к ${core.formatDate(state.settings.deadline)}`;
   const road = $('progress');
   if (s.pct > ui.shownPct + 0.05) replay(road, 'driving', MOTION.drive);
   ui.shownPct = s.pct;
-
+  // Двойной кадр — чтобы при первом показе мотоцикл выехал со старта, а не появился на месте.
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       $('fill').style.width = s.pct + '%';
       road.style.setProperty('--p', s.pct + '%');
     }),
   );
-  
   road.classList.toggle('finished', s.phase === 'done');
   const bike = $('dreamBike');
   bike.style.setProperty('--gray', String(1 - s.pct / 100));
   bike.parentElement.classList.toggle('done', s.phase === 'done');
   bike.alt = `Мотоцикл мечты: цвет проявляется по мере накопления, сейчас ${Math.floor(s.pct)}%`;
-  
   const pctText = s.pct.toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
   $('pct').textContent = pctText;
-  
   const progress = $('progress');
   progress.setAttribute('aria-valuenow', String(Math.round(s.pct)));
   progress.setAttribute('aria-valuetext', `${pctText}: ${core.formatRub(s.total)} из ${core.formatRub(g)}`);
-  
   $('left').textContent = s.left ? 'ещё ' + core.formatRub(s.left) : 'набрано';
-  
-  // Мгновенное обновление цели по дням и заработка в час:
   $('perDay').textContent =
     s.perDay === null ? '—' : s.perDay === 0 ? '0 ₽' : core.formatRub(Math.ceil(s.perDay));
   $('perHour').textContent = s.perHour === null ? '—' : core.formatRub(Math.round(s.perHour));
-  
   $('daysLeft').textContent = s.daysLeftText;
-  
   const st = $('status');
   st.className = 'status ' + s.status.tone;
   st.textContent =
     Object.keys(state.entries).length || s.phase === 'done' ? s.status.text : 'Записей пока нет.';
-}
+  if (!Object.keys(state.entries).length && s.phase !== 'done') st.className = 'status neutral';
+  $('forecast').textContent = core.forecastText(core.forecast(state, t));
+  const lockInfo = $('lockInfo');
+  lockInfo.hidden = !prefs.lock;
+  if (prefs.lock) {
+    const w = core.withdrawals(state.entries, prefs.lockSince);
+    lockInfo.textContent = w.count
+      ? `Замок включён. Из копилки брали ${w.count} раз на ${core.formatRub(w.sum)}.`
+      : 'Замок включён. Из копилки ничего не брали.';
+  }
 
-// Общая функция перерисовки всего приложения при любых изменениях стейта
-function renderAll() {
-  renderHome();
-  renderHistory();
-  renderChart();
-  renderSettings();
-  renderStorageInfo();
-}
+  renderChart(t, { animate: ui.chartAnimate });
+  ui.chartAnimate = false;
 
-// При отправке новой записи или изменении настроек обязательно вызывается commit() и renderAll()
-function submitEntry(ev) {
-  ev.preventDefault();
-  // ... ваш код обработки формы добавления записи ...
-  
-  commit();     // Сохраняем состояние в localStorage
-  renderAll();  // Мгновенно пересчитывает и обновляет все элементы на экране
-  go('home');   // Возвращаемся на главную
+  const m = core.monthSummary(state.entries, t);
+  $('monthIncome').textContent = core.formatRub(m.income);
+  $('monthSpent').textContent = core.formatRub(m.spent);
+  const net = $('monthNet');
+  net.textContent = (m.net < 0 ? '−' : '') + core.formatRub(Math.abs(m.net));
+  net.className = m.net < 0 ? 'neg' : 'pos';
+
+  const spend = core.spendingBreakdown(state.entries, t);
+  $('spendWrap').hidden = !spend.items.length;
+  $('spendList').replaceChildren(
+    ...spend.items.map((x) => {
+      const pct = Math.round(x.share * 100);
+      const bar = h('span', { className: 'spend-fill' });
+      bar.style.width = `${Math.max(2, x.share * 100)}%`;
+      return h(
+        'li',
+        {},
+        h('span', { className: 'spend-label', text: x.label }),
+        h('span', { className: 'spend-sum', text: `${core.formatRub(x.amount)} · ${pct}%` }),
+        h('span', { className: 'spend-bar', 'aria-hidden': 'true' }, bar),
+      );
+    }),
+  );
+
+  const a = core.achievements(state, t);
+  const unlocked = new Set(a.items.filter((x) => x.done).map((x) => x.title));
+  const fresh = ui.knownMarks ? [...unlocked].filter((x) => !ui.knownMarks.has(x)) : [];
+  ui.knownMarks = unlocked;
+  $('achievements').replaceChildren(
+    ...a.items.map((x) =>
+      h(
+        'li',
+        {
+          className: 'mark ' + (x.done ? 'unlocked' : 'locked') + (fresh.includes(x.title) ? ' fresh' : ''),
+          title: x.hint,
+        },
+        icon('check'),
+        x.title,
+        h('span', { className: 'visually-hidden', text: x.done ? ' — есть' : ' — пока нет' }),
+      ),
+    ),
+  );
+  $('streakLabel').textContent = a.streak ? `${a.streak} дн. подряд с доходом` : '';
+  $('nextAchievement').textContent = a.next ? `Дальше: ${a.next.title.toLowerCase()} — ${a.next.hint}.` : '';
+
+  const recent = core.sortEntries(state.entries).slice(0, 5);
+  $('recent').replaceChildren(
+    ...(recent.length
+      ? recent.map(([id, e]) => entryItem(id, e))
+      : [h('li', { className: 'empty', text: 'Пусто. Нажми «Доход», когда закроешь первую смену.' })]),
+  );
+  renderPresets();
+  renderBanners();
+  ui.flashId = null;
+  if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), MOTION.markToast);
 }
 
 function renderChart(t, { animate = false } = {}) {
