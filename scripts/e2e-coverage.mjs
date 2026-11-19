@@ -65,6 +65,20 @@ for (const [file, acc] of [...hits].sort(([a], [b]) => a.localeCompare(b))) {
     if (acc[i]) hit++;
   }
   const pct = (100 * hit) / total;
+  // Непокрытые строки: показываем для файлов ниже порога и при E2E_COVERAGE_DETAIL=1.
+  const missed = [];
+  let offset = 0;
+  src.split('\n').forEach((line, i) => {
+    const bad = [...line].some((ch, k) => !/\s/.test(ch) && !acc[offset + k]);
+    if (bad) missed.push(i + 1);
+    offset += line.length + 1;
+  });
+  const ranges = [];
+  for (const n of missed) {
+    const last = ranges.at(-1);
+    if (last && n - last[1] <= 1) last[1] = n;
+    else ranges.push([n, n]);
+  }
   const calls = fnCalls.get(file);
   const never = [...calls].filter(([, c]) => !c).map(([k]) => k.split('@')[0]);
   const ok = pct >= MIN;
@@ -73,6 +87,9 @@ for (const [file, acc] of [...hits].sort(([a], [b]) => a.localeCompare(b))) {
     `${ok ? '✓' : '✗'} ${file.padEnd(24)} ${pct.toFixed(1).padStart(5)}%  функции ${calls.size - never.length}/${calls.size}` +
       (never.length ? `  не вызывались: ${never.join(', ')}` : ''),
   );
+  if ((!ok || process.env.E2E_COVERAGE_DETAIL) && ranges.length) {
+    rows.push(`    непокрытые строки: ${ranges.map(([x, y]) => (x === y ? x : `${x}-${y}`)).join(', ')}`);
+  }
 }
 console.log(`\nПокрытие JS E2E-тестами (порог ${MIN}% по каждому файлу):\n` + rows.join('\n'));
 if (!hits.size) {

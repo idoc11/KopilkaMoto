@@ -46,6 +46,17 @@ async function dumpCoverage(page) {
   }
 }
 
+/**
+ * Сбросить покрытие в файл прямо сейчас. Нужно перед действием, после которого страница перезагрузится сама
+ * (например, кнопка «Обновить»): покрытие старого документа V8 при этом теряет.
+ */
+export async function flushCoverage(page) {
+  if (!COVERAGE_DIR || !page.__coverage) return;
+  await dumpCoverage(page);
+  page.__coverage = page.coverage.startJSCoverage({ resetOnNavigation: false }).catch(() => null);
+  await page.__coverage;
+}
+
 async function dumpContext(ctx) {
   await Promise.all(ctx.pages().map(dumpCoverage));
 }
