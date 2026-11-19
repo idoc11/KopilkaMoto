@@ -2,44 +2,16 @@ import * as core from './core.js';
 import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
+import { $, h, icon, serviceWorkerUrl } from './dom.js';
 
-const APP_VERSION = '6.6.2';
+const APP_VERSION = '6.7.0';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
 const THEME_COLORS = { light: '#f4f2ed', dark: '#0d0e11' };
 const THEME_NAMES = { auto: 'как в системе', light: 'светлая', dark: 'тёмная' };
 
-const $ = (id) => document.getElementById(id);
 const today = () => core.todayIso();
-
-/** Небольшой помощник для создания DOM без innerHTML. */
-function h(tag, props = {}, ...children) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) {
-    if (v === undefined || v === null || v === false) continue;
-    if (k === 'className') el.className = v;
-    else if (k === 'text') el.textContent = v;
-    else if (k === 'dataset') Object.assign(el.dataset, v);
-    else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v);
-    else el.setAttribute(k, v === true ? '' : v);
-  }
-  el.append(...children.flat().filter((c) => c !== null && c !== undefined && c !== false));
-  return el;
-}
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-/** SVG-значок из спрайта в index.html. */
-function icon(name) {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('class', 'i');
-  svg.setAttribute('aria-hidden', 'true');
-  const use = document.createElementNS(SVG_NS, 'use');
-  use.setAttribute('href', '#i-' + name);
-  svg.append(use);
-  return svg;
-}
 
 // ---------- Хранилище ----------
 
@@ -1268,7 +1240,7 @@ function setupServiceWorker() {
     };
   };
   navigator.serviceWorker
-    .register('./service-worker.js')
+    .register(serviceWorkerUrl())
     .then((reg) => {
       if (reg.waiting && navigator.serviceWorker.controller) offerUpdate(reg.waiting);
       reg.addEventListener('updatefound', () => {

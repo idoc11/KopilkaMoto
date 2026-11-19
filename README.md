@@ -67,7 +67,8 @@ npx wrangler deploy
 npm ci
 npm start            # http://localhost:8080 — ES-модули не работают через file://
 npm run lint         # ESLint + Prettier
-npm test             # unit-тесты, порог покрытия 80% и E2E (Playwright + axe)
+npm test             # unit-тесты, порог покрытия 80% и E2E (Playwright + axe) с покрытием UI ≥ 80% по каждому файлу
+npm run test:e2e     # только E2E, без замера покрытия (быстрее)
 npm run build        # сборка _site/ как на GitHub Pages
 npm run icons        # перегенерировать PNG-иконки из описания в scripts/icons.mjs
 ```
@@ -82,6 +83,7 @@ npm run icons        # перегенерировать PNG-иконки из о
 | `js/core.js` | Вся логика: расчёты, миграция данных, CSV, копии, контекст для AI |
 | `js/storage.js` | Работа с `localStorage`, сохранение исходных данных |
 | `js/markdown.js` | Безопасный рендер ответов AI |
+| `js/dom.js` | Создание DOM без HTML-строк, безопасные URL, политика Trusted Types для service worker |
 | `js/motion.js` | Анимации (с учётом «уменьшить движение») |
 | `js/app.js` | Интерфейс |
 | `service-worker.js` | Офлайн-кеш и обновления |
