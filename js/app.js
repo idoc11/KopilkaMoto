@@ -3,7 +3,7 @@ import { createStore } from './storage.js';
 import { renderMarkdown } from './markdown.js';
 import { MOTION, countUp, haptic, leave, reducedMotion, replay } from './motion.js';
 
-const APP_VERSION = '6.6.0';
+const APP_VERSION = '6.6.2';
 const PAGES = ['home', 'add', 'history', 'ai', 'settings'];
 /** Сколько строк истории рисовать за раз: тысячи DOM-узлов тормозят поиск на телефоне. */
 const HISTORY_PAGE = 100;
@@ -370,7 +370,7 @@ function renderHome() {
   st.textContent =
     Object.keys(state.entries).length || s.phase === 'done' ? s.status.text : 'Записей пока нет.';
   if (!Object.keys(state.entries).length && s.phase !== 'done') st.className = 'status neutral';
-  $('forecast').textContent = core.forecastText(core.forecast(state, t));
+  $('forecast').textContent = core.forecastBothText(state, t);
   const lockInfo = $('lockInfo');
   lockInfo.hidden = !prefs.lock;
   if (prefs.lock) {
@@ -1471,6 +1471,23 @@ function blockIfFramed() {
   return true;
 }
 
+// Обновляем сводку при наступлении нового локального дня, даже если приложение
+// остаётся открытым. При возвращении из сна/фонового режима renderAll вызывается
+// также обработчиком visibilitychange ниже.
+let dayRefreshTimer = 0;
+
+function scheduleDayRefresh() {
+  clearTimeout(dayRefreshTimer);
+  const now = new Date();
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  // Небольшой запас, чтобы локальная дата уже гарантированно сменилась.
+  const delay = Math.max(100, nextMidnight.getTime() - now.getTime() + 100);
+  dayRefreshTimer = window.setTimeout(() => {
+    renderAll();
+    scheduleDayRefresh();
+  }, delay);
+}
+
 function init() {
   if (blockIfFramed()) return;
   reportLoadProblems();
@@ -1484,6 +1501,7 @@ function init() {
   setupInstall();
   showPage(pageFromHash(), { focus: false });
   setupServiceWorker();
+  scheduleDayRefresh();
   document.documentElement.dataset.ready = 'true';
 }
 

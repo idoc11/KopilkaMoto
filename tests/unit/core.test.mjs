@@ -306,6 +306,29 @@ test('темп и прогноз даты покупки', () => {
   assert.equal(core.forecast(st({ a: e(T, 200000) }), T).status, 'done');
 });
 
+test('оба прогноза: последние 30 дней и весь период плана', () => {
+  const entries = {
+    old: e('2026-11-02', 10000),
+    beforePlan: e('2026-10-20', 50000),
+    expense: e('2026-11-10', 2000, 'spent'),
+  };
+  const s = st(entries, { goal: 100000, startDate: '2026-11-01', deadline: '2027-03-31' });
+  assert.equal(core.savingPaceOverall(s.entries, s.settings.startDate, T), 8000 / 15);
+  const both = core.forecastBoth(s, T);
+  assert.equal(both.recent.status, 'ok');
+  assert.equal(both.overall.status, 'ok');
+  assert.match(core.forecastBothText(s, T), /За последние 30 дней/);
+  assert.match(core.forecastBothText(s, T), /За весь период накопления/);
+  // два прогноза — две строки (настоящий перенос, а не символы «\n»)
+  const lines = core.forecastBothText(s, T).split('\n');
+  assert.match(lines[0], /^За последние 30 дней: при текущем темпе/);
+  assert.equal(lines.length, 2);
+  assert.ok(lines[0].startsWith('За последние 30 дней') && lines[1].startsWith('За весь период'));
+  assert.doesNotMatch(core.forecastBothText(s, T), /\\n/);
+  const beforeStart = core.forecastBoth(st({}, { startDate: '2026-12-01' }), T);
+  assert.equal(beforeStart.overall.status, 'not-started');
+});
+
 test('замок: задержка покупки и подсчёт расходов', () => {
   const entries = {};
   for (let i = 0; i < 10; i++) entries['d' + i] = e(core.addDays(T, -i), 1000, 'delivery', { ts: 100 + i });
