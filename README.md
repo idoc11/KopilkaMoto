@@ -85,7 +85,9 @@ npm run icons        # перегенерировать PNG-иконки из о
 | `js/markdown.js` | Безопасный рендер ответов AI |
 | `js/dom.js` | Создание DOM без HTML-строк, безопасные URL, политика Trusted Types для service worker |
 | `js/motion.js` | Анимации (с учётом «уменьшить движение») |
-| `js/app.js` | Интерфейс |
+| `js/app.js` | Точка входа (запуск интерфейса) |
+| `js/ui/*.js` | Интерфейс по экранам и обязанностям: `context` (состояние), `router`, `home`, `form`, `history`, `settings`, `chat`, `backup`… |
+| `js/version.js` | Версия приложения |
 | `service-worker.js` | Офлайн-кеш и обновления |
 | `fonts/` | Шрифт Russo One (лицензия OFL, `fonts/OFL.txt`) |
 | `worker/` | Cloudflare Worker для AI |
@@ -104,6 +106,6 @@ python3 scripts/cutout.py фото.jpg images/dream-bike.webp
 
 ### Выпуск новой версии
 
-1. Подними `version` в `package.json` и `APP_VERSION` в `js/app.js` (тест проверяет, что они совпадают).
+1. Подними `version` в `package.json` и `APP_VERSION` в `js/version.js` (тест проверяет, что они совпадают).
 2. При публикации не через Actions — смени `VERSION` в `service-worker.js`.
 3. `npm run lint && npm test`.
