@@ -521,6 +521,8 @@ a {
   font-size: 13.5px;
   color: var(--muted);
   padding: 0 2px;
+  white-space: pre-line;
+  line-height: 1.55;
 }
 .lock-info {
   font-size: 13.5px;

@@ -15,7 +15,7 @@ function tenDays() {
 test('прогноз даты покупки на главной', async () => {
   const ctx = await env.context();
   const page = await open(ctx, env.base, { storage: configured(tenDays(), { goal: 20000 }) });
-  assert.match(await page.textContent('#forecast'), /При текущем темпе — \d\d\.\d\d\.\d{4}/);
+  assert.match(await page.textContent('#forecast'), /при текущем темпе — \d\d\.\d\d\.\d{4}/);
   const empty = await open(ctx, env.base, { storage: configured() });
   assert.match(await empty.textContent('#forecast'), /после первых записей/);
   await ctx.close();
