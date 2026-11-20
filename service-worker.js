@@ -3,7 +3,7 @@
 
 // VERSION меняй при каждом релизе. BUILD подставляет workflow публикации (хеш коммита),
 // поэтому при деплое через GitHub Actions кеш обновляется автоматически.
-const VERSION = 'v21';
+const VERSION = 'v22';
 const BUILD = 'dev';
 const PREFIX = 'kopilkamoto-';
 const CACHE = `${PREFIX}${VERSION}-${BUILD}`;
@@ -15,10 +15,30 @@ const SHELL = [
   './styles.css',
   './js/app.js',
   './js/core.js',
-  './js/storage.js',
+  './js/dom.js',
   './js/markdown.js',
   './js/motion.js',
-  './js/dom.js',
+  './js/storage.js',
+  './js/ui/backup.js',
+  './js/ui/banners.js',
+  './js/ui/bindings.js',
+  './js/ui/chat.js',
+  './js/ui/context.js',
+  './js/ui/entries.js',
+  './js/ui/form.js',
+  './js/ui/history.js',
+  './js/ui/home.js',
+  './js/ui/notify.js',
+  './js/ui/onboarding.js',
+  './js/ui/pages.js',
+  './js/ui/presets.js',
+  './js/ui/pwa.js',
+  './js/ui/router.js',
+  './js/ui/settings.js',
+  './js/ui/startup.js',
+  './js/ui/sync.js',
+  './js/ui/theme.js',
+  './js/version.js',
   './fonts/russo-one-cyrillic-400-normal.woff2',
   './fonts/russo-one-latin-400-normal.woff2',
   './images/dream-bike.webp',

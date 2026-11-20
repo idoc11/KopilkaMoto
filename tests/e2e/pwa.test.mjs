@@ -1,7 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { setup, open, configured, entry, today } from './helpers.mjs';
+import { setup, open, configured, entry, today, flushCoverage } from './helpers.mjs';
 
 let env;
 before(async () => (env = await setup()));
@@ -32,6 +32,7 @@ test('P1-8: офлайн-запуск и обновление по кнопке'
   env.overrides.set('/service-worker.js', sw.replace("const BUILD = 'dev'", "const BUILD = 'next'"));
   await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
   await page.waitForSelector('#updateBanner:not([hidden])', { timeout: 15000 });
+  await flushCoverage(page); // после клика страница перезагрузится сама
   await Promise.all([page.waitForEvent('load'), page.click('#updateBtn')]);
   await page.waitForSelector('html[data-ready]');
   const cacheNames = await page.evaluate(() => caches.keys());
