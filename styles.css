@@ -753,6 +753,34 @@ h2.page-title {
   transition: width var(--t-move) ease;
 }
 
+/* Когда выгоднее работать */
+.insights summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+}
+.insights-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--good-fg);
+  font-size: 13px;
+  font-weight: 700;
+}
+.insights-lead {
+  margin: 8px 0 14px;
+}
+.insights-list .best .spend-fill {
+  background: var(--green);
+}
+.insights-list .worst .spend-fill {
+  background: var(--muted);
+}
+
 /* Отметки */
 .marks {
   list-style: none;
