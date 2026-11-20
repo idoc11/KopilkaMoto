@@ -753,6 +753,23 @@ h2.page-title {
   transition: width var(--t-move) ease;
 }
 
+/* Итоги */
+.report-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.report-tabs .btn[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.report-text {
+  white-space: pre-line;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
 /* Календарь смен */
 .cal-wrap {
   display: flex;

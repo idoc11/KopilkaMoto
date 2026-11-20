@@ -38,6 +38,7 @@
     <link rel="modulepreload" href="./js/motion.js" />
     <link rel="modulepreload" href="./js/insights.js" />
     <link rel="modulepreload" href="./js/plan.js" />
+    <link rel="modulepreload" href="./js/report.js" />
     <link rel="modulepreload" href="./js/storage.js" />
     <link rel="modulepreload" href="./js/ui/backup.js" />
     <link rel="modulepreload" href="./js/ui/banners.js" />
@@ -54,6 +55,7 @@
     <link rel="modulepreload" href="./js/ui/pages.js" />
     <link rel="modulepreload" href="./js/ui/insights.js" />
     <link rel="modulepreload" href="./js/ui/plan.js" />
+    <link rel="modulepreload" href="./js/ui/report.js" />
     <link rel="modulepreload" href="./js/ui/presets.js" />
     <link rel="modulepreload" href="./js/ui/pwa.js" />
     <link rel="modulepreload" href="./js/ui/router.js" />
@@ -338,6 +340,16 @@
             <div class="card">
               <ul class="spend" id="spendList"></ul>
             </div>
+          </div>
+
+          <h3 class="head">Итоги</h3>
+          <div class="card report-card">
+            <div class="report-tabs" role="group" aria-label="Период итогов">
+              <button class="btn small" type="button" id="reportWeek" aria-pressed="true">Неделя</button>
+              <button class="btn small" type="button" id="reportMonth" aria-pressed="false">Месяц</button>
+            </div>
+            <p class="report-text" id="reportText"></p>
+            <button class="btn small ghost" type="button" id="reportCopy">Скопировать</button>
           </div>
 
           <h3 class="head">Календарь смен</h3>

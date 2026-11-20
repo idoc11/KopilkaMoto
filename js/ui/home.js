@@ -9,6 +9,7 @@ import { toast } from './notify.js';
 import { renderCalendar } from './calendar.js';
 import { renderInsights } from './insights.js';
 import { renderPlan } from './plan.js';
+import { renderReport } from './report.js';
 import { renderPresets } from './presets.js';
 
 export function renderHome() {
@@ -115,6 +116,7 @@ export function renderHome() {
   );
   renderPresets();
   renderPlan();
+  renderReport();
   renderCalendar();
   renderInsights();
   renderBanners();
