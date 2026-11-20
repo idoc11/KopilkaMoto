@@ -3,7 +3,7 @@
 
 // VERSION меняй при каждом релизе. BUILD подставляет workflow публикации (хеш коммита),
 // поэтому при деплое через GitHub Actions кеш обновляется автоматически.
-const VERSION = 'v26';
+const VERSION = 'v27';
 const BUILD = 'dev';
 const PREFIX = 'kopilkamoto-';
 const CACHE = `${PREFIX}${VERSION}-${BUILD}`;
@@ -21,6 +21,7 @@ const SHELL = [
   './js/markdown.js',
   './js/motion.js',
   './js/plan.js',
+  './js/report.js',
   './js/storage.js',
   './js/ui/backup.js',
   './js/ui/banners.js',
@@ -39,6 +40,7 @@ const SHELL = [
   './js/ui/plan.js',
   './js/ui/presets.js',
   './js/ui/pwa.js',
+  './js/ui/report.js',
   './js/ui/router.js',
   './js/ui/settings.js',
   './js/ui/startup.js',
