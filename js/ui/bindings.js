@@ -8,12 +8,14 @@ import { HISTORY_PAGE, app, savePrefs, ui } from './context.js';
 import { openAdd, resetForm, setKind, submitEntry } from './form.js';
 import { renderHistory } from './history.js';
 import { toast } from './notify.js';
+import { bindPlan } from './plan.js';
 import { submitPreset } from './presets.js';
 import { PAGES, go, pageFromHash, renderAll, showPage } from './router.js';
 import { downloadRaw, submitApi, submitSettings } from './settings.js';
 import { THEME_NAMES, applyTheme } from './theme.js';
 
 export function bind() {
+  bindPlan();
   $('entryForm').addEventListener('submit', submitEntry);
   $('cancelEntry').addEventListener('click', () => {
     resetForm();

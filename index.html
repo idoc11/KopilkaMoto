@@ -35,6 +35,7 @@
     <link rel="modulepreload" href="./js/dom.js" />
     <link rel="modulepreload" href="./js/markdown.js" />
     <link rel="modulepreload" href="./js/motion.js" />
+    <link rel="modulepreload" href="./js/plan.js" />
     <link rel="modulepreload" href="./js/storage.js" />
     <link rel="modulepreload" href="./js/ui/backup.js" />
     <link rel="modulepreload" href="./js/ui/banners.js" />
@@ -48,6 +49,7 @@
     <link rel="modulepreload" href="./js/ui/notify.js" />
     <link rel="modulepreload" href="./js/ui/onboarding.js" />
     <link rel="modulepreload" href="./js/ui/pages.js" />
+    <link rel="modulepreload" href="./js/ui/plan.js" />
     <link rel="modulepreload" href="./js/ui/presets.js" />
     <link rel="modulepreload" href="./js/ui/pwa.js" />
     <link rel="modulepreload" href="./js/ui/router.js" />
@@ -273,6 +275,31 @@
           <div id="presetsHome" hidden>
             <h3 class="head">Частые расходы</h3>
             <div class="chips presets" id="quickSpend" role="group" aria-label="Записать частый расход"></div>
+          </div>
+
+          <h3 class="head">План на неделю</h3>
+          <div class="card plan-card" id="planCard">
+            <p class="plan-lead" id="planLead"></p>
+            <div class="plan-week" id="planWeek" hidden>
+              <p class="plan-week-text" id="planWeekText"></p>
+              <progress id="planWeekBar" max="100" value="0" aria-labelledby="planWeekText"></progress>
+            </div>
+            <div class="plan-whatif" id="planWhatIf" hidden>
+              <p class="plan-label" id="planLabel">
+                Если выходить <output id="planShiftsOut" for="planShifts">3 смены</output> в неделю
+              </p>
+              <input
+                id="planShifts"
+                type="range"
+                min="0"
+                max="7"
+                step="1"
+                value="3"
+                aria-labelledby="planLabel"
+                aria-describedby="planResult"
+              />
+              <p class="plan-result" id="planResult" aria-live="polite"></p>
+            </div>
           </div>
 
           <div class="head">

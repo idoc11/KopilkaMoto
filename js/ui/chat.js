@@ -1,6 +1,7 @@
 // AI-помощник: переписка, запрос к прокси, очистка.
 import * as core from '../core.js';
 import { $, h } from '../dom.js';
+import { planForAi } from '../plan.js';
 import { renderMarkdown } from '../markdown.js';
 import { app, store, today, ui } from './context.js';
 import { confirmDialog, toast } from './notify.js';
@@ -67,7 +68,10 @@ export async function ask(ev) {
   const timer = setTimeout(() => controller.abort(), 45_000);
   let error = '';
   try {
-    const { json } = core.buildAiPayload(app.chat, core.buildAiContext(app.state, today()));
+    const { json } = core.buildAiPayload(app.chat, {
+      ...core.buildAiContext(app.state, today()),
+      plan: planForAi(app.state, today()),
+    });
     const res = await fetch(app.prefs.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
