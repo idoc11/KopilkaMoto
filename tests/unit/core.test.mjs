@@ -321,7 +321,12 @@ test('оба прогноза: последние 30 дней и весь пер
   assert.match(core.forecastBothText(s, T), /За весь период накопления/);
   // два прогноза — две строки (настоящий перенос, а не символы «\n»)
   const lines = core.forecastBothText(s, T).split('\n');
-  assert.match(lines[0], /^За последние 30 дней: при текущем темпе/);
+  // в строке прогноза есть сам темп в рублях в день и понятный вывод про срок
+  assert.match(
+    lines[0],
+    /^За последние 30 дней копишь ≈ [\d\s\u00a0]+\u00a0₽ в день — цель будет \d\d\.\d\d\.\d{4}, на \d+ дн\. (позже|раньше) срока\.$/,
+  );
+  assert.match(lines[1], /^За весь период накопления копишь ≈ /);
   assert.equal(lines.length, 2);
   assert.ok(lines[0].startsWith('За последние 30 дней') && lines[1].startsWith('За весь период'));
   assert.doesNotMatch(core.forecastBothText(s, T), /\\n/);

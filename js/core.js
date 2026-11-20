@@ -658,6 +658,16 @@ export function forecastBothText(state, today) {
   const describe = (label, f) => {
     if (f.status === 'not-started')
       return `${label}: расчёт начнётся ${formatDate(state.settings.startDate)}.`;
+    if (f.status === 'ok') {
+      // Показываем сам темп: без него дату не с чем сравнить.
+      const verdict =
+        f.lateDays > 0
+          ? `на ${f.lateDays} дн. позже срока`
+          : f.lateDays < 0
+            ? `на ${-f.lateDays} дн. раньше срока`
+            : 'ровно в срок';
+      return `${label} копишь ≈ ${formatRub(Math.round(f.pace))} в день — цель будет ${formatDate(f.date)}, ${verdict}.`;
+    }
     const text = forecastText(f);
     return `${label}: ${text[0].toLowerCase()}${text.slice(1)}`;
   };
