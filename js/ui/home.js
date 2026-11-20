@@ -6,6 +6,7 @@ import { renderBanners } from './banners.js';
 import { app, today, ui } from './context.js';
 import { entryItem } from './entries.js';
 import { toast } from './notify.js';
+import { renderInsights } from './insights.js';
 import { renderPlan } from './plan.js';
 import { renderPresets } from './presets.js';
 
@@ -113,6 +114,7 @@ export function renderHome() {
   );
   renderPresets();
   renderPlan();
+  renderInsights();
   renderBanners();
   ui.flashId = null;
   if (fresh.length) setTimeout(() => toast(`Новая отметка: ${fresh.join(', ')}`), MOTION.markToast);

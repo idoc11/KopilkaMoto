@@ -35,6 +35,7 @@
     <link rel="modulepreload" href="./js/dom.js" />
     <link rel="modulepreload" href="./js/markdown.js" />
     <link rel="modulepreload" href="./js/motion.js" />
+    <link rel="modulepreload" href="./js/insights.js" />
     <link rel="modulepreload" href="./js/plan.js" />
     <link rel="modulepreload" href="./js/storage.js" />
     <link rel="modulepreload" href="./js/ui/backup.js" />
@@ -49,6 +50,7 @@
     <link rel="modulepreload" href="./js/ui/notify.js" />
     <link rel="modulepreload" href="./js/ui/onboarding.js" />
     <link rel="modulepreload" href="./js/ui/pages.js" />
+    <link rel="modulepreload" href="./js/ui/insights.js" />
     <link rel="modulepreload" href="./js/ui/plan.js" />
     <link rel="modulepreload" href="./js/ui/presets.js" />
     <link rel="modulepreload" href="./js/ui/pwa.js" />
@@ -335,6 +337,15 @@
               <ul class="spend" id="spendList"></ul>
             </div>
           </div>
+
+          <details class="card insights" id="insightsCard">
+            <summary>
+              <span class="insights-title">Когда выгоднее работать</span>
+              <span class="insights-badge" id="insightsBadge" hidden></span>
+            </summary>
+            <p class="hint insights-lead" id="insightsLead"></p>
+            <ul class="spend insights-list" id="insightsList"></ul>
+          </details>
 
           <div class="head">
             <h3>Отметки</h3>
