@@ -62,6 +62,7 @@ export const ui = {
   flashId: null,
   chartAnimate: true,
   historyLimit: HISTORY_PAGE,
+  planShifts: null,
 };
 
 export function cloneState(s = app.state) {

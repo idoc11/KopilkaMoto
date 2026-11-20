@@ -613,7 +613,7 @@ export function savingPaceOverall(entries, startDate, today) {
   return net / span;
 }
 
-function forecastAtPace(left, pace, today, deadline, hasEntries = true) {
+export function forecastAtPace(left, pace, today, deadline, hasEntries = true) {
   if (left <= 0) return { status: 'done' };
   if (!hasEntries) return { status: 'no-data' };
   if (pace <= 0) return { status: 'no-progress', pace };
