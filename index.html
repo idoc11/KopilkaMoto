@@ -31,6 +31,7 @@
     />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./js/app.js"></script>
+    <link rel="modulepreload" href="./js/calendar.js" />
     <link rel="modulepreload" href="./js/core.js" />
     <link rel="modulepreload" href="./js/dom.js" />
     <link rel="modulepreload" href="./js/markdown.js" />
@@ -42,6 +43,7 @@
     <link rel="modulepreload" href="./js/ui/banners.js" />
     <link rel="modulepreload" href="./js/ui/bindings.js" />
     <link rel="modulepreload" href="./js/ui/chat.js" />
+    <link rel="modulepreload" href="./js/ui/calendar.js" />
     <link rel="modulepreload" href="./js/ui/context.js" />
     <link rel="modulepreload" href="./js/ui/entries.js" />
     <link rel="modulepreload" href="./js/ui/form.js" />
@@ -336,6 +338,17 @@
             <div class="card">
               <ul class="spend" id="spendList"></ul>
             </div>
+          </div>
+
+          <h3 class="head">Календарь смен</h3>
+          <div class="card calendar-card">
+            <div class="cal-wrap">
+              <div class="cal-days" aria-hidden="true">
+                <span>Пн</span><span>Ср</span><span>Пт</span><span>Вс</span>
+              </div>
+              <div class="cal-grid" id="calendarGrid" role="img" aria-label="Календарь смен"></div>
+            </div>
+            <p class="hint" id="calendarSummary"></p>
           </div>
 
           <details class="card insights" id="insightsCard">

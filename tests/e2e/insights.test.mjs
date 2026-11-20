@@ -59,3 +59,21 @@ for (const theme of ['light', 'dark']) {
     await ctx.close();
   });
 }
+
+test('календарь смен: клетки закрашены по сменам, сводка и подпись', async () => {
+  const ctx = await env.context();
+  const page = await open(ctx, env.base, { storage: weeks() });
+  assert.equal(await page.locator('#calendarGrid .cal-cell').count(), 84);
+  assert.ok((await page.locator('#calendarGrid .cal-cell.l4').count()) >= 8);
+  assert.equal(await page.locator('#calendarGrid .cal-cell.now').count(), 1);
+  assert.match(
+    await page.getAttribute('#calendarGrid', 'aria-label'),
+    /Календарь смен за 12 недель: \d+ смен/,
+  );
+  assert.match(await page.textContent('#calendarSummary'), /За 12 недель — \d+ смен/);
+  await page.close();
+  const empty = await open(ctx, env.base, { storage: configured() });
+  assert.match(await empty.textContent('#calendarSummary'), /Смен за 12 недель пока нет/);
+  assert.match(await empty.getAttribute('#calendarGrid', 'aria-label'), /смен пока нет/);
+  await ctx.close();
+});
